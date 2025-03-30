@@ -1,0 +1,22 @@
+name: Test
+
+on: [ push, pull_request ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: "Build and test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --features ci
+
+      - name: Test
+        run: cargo test --features ci

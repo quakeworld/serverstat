@@ -1,0 +1,32 @@
+[package]
+name = "serverstat"
+description = "Get server addresses from QuakeWorld master servers."
+keywords = ["servers", "quake", "quakeworld"]
+repository = "https://github.com/quakeworld/serverstat"
+authors = ["Viktor Persson <viktor.persson@arcsin.se>"]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+include = [
+    "/Cargo.toml",
+    "/LICENSE",
+    "/README.md",
+    "/src/**",
+    "/tests/**",
+]
+
+[dependencies]
+anyhow = "1.0.97"
+tinyudp = "0.5.1"
+quake_serverinfo = { version = "0.8.0", features = ["json"] }
+quake_text = "0.2.0"
+tokio = { version = "1.44.1", features = ["macros"] }
+
+serde = { optional = true, version = "1.0.219", features = ["derive"] }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"
+
+[features]
+ci = []
+json = ["dep:serde"]

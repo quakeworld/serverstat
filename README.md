@@ -1,2 +1,3 @@
 # serverstat
-Get info from QuakeWorld servers.
+
+> Get info from QuakeWorld servers
