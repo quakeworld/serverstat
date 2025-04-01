@@ -16,7 +16,11 @@ use {
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "json",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
 pub enum ServerType {
     GameServer,
     ProxyServer,
@@ -56,7 +60,11 @@ impl ServerType {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "json",
+    derive(Serialize, Deserialize),
+    serde(rename_all = "snake_case")
+)]
 pub enum SoftwareType {
     FortressOne,
     FTE,
