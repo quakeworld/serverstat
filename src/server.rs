@@ -67,10 +67,10 @@ impl ServerType {
 )]
 pub enum SoftwareType {
     FortressOne,
-    FTE,
-    MVDSV,
-    QTV,
-    QWFWD,
+    Fte,
+    Mvdsv,
+    Qtv,
+    Qwfwd,
     Unknown,
 }
 
@@ -78,10 +78,10 @@ impl Display for SoftwareType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             SoftwareType::FortressOne => write!(f, "FortressOne"),
-            SoftwareType::FTE => write!(f, "FTE"),
-            SoftwareType::MVDSV => write!(f, "MVDSV"),
-            SoftwareType::QTV => write!(f, "QTV"),
-            SoftwareType::QWFWD => write!(f, "QWFWD"),
+            SoftwareType::Fte => write!(f, "FTE"),
+            SoftwareType::Mvdsv => write!(f, "MVDSV"),
+            SoftwareType::Qtv => write!(f, "QTV"),
+            SoftwareType::Qwfwd => write!(f, "QWFWD"),
             SoftwareType::Unknown => write!(f, "Unknown"),
         }
     }
@@ -93,11 +93,11 @@ impl SoftwareType {
 
         match prefix.to_lowercase().as_str() {
             "fo" => SoftwareType::FortressOne,
-            "fte" => SoftwareType::FTE,
-            "mvdsv" => SoftwareType::MVDSV,
-            "qtvgo" => SoftwareType::QTV,
-            "qtv" => SoftwareType::QTV,
-            "qwfwd" => SoftwareType::QWFWD,
+            "fte" => SoftwareType::Fte,
+            "mvdsv" => SoftwareType::Mvdsv,
+            "qtvgo" => SoftwareType::Qtv,
+            "qtv" => SoftwareType::Qtv,
+            "qwfwd" => SoftwareType::Qwfwd,
             _ => SoftwareType::Unknown,
         }
     }
@@ -150,7 +150,7 @@ impl Serialize for QuakeServer {
         S: Serializer,
     {
         let field_count: usize = 2 + match self.software_type {
-            SoftwareType::QTV | SoftwareType::QWFWD => 2,
+            SoftwareType::Qtv | SoftwareType::Qwfwd => 2,
             _ => 5,
         };
 
@@ -159,11 +159,11 @@ impl Serialize for QuakeServer {
         state.serialize_field("software_type", &self.software_type)?;
         state.serialize_field("address", &self.address)?;
 
-        if self.software_type == SoftwareType::QTV {
+        if self.software_type == SoftwareType::Qtv {
             let qtv = QtvServer::from(self);
             state.serialize_field("settings", &qtv.settings)?;
             state.serialize_field("clients", &qtv.clients)?;
-        } else if self.software_type == SoftwareType::QWFWD {
+        } else if self.software_type == SoftwareType::Qwfwd {
             let qwfwd = QwfwdServer::from(self);
             state.serialize_field("settings", &qwfwd.settings)?;
             state.serialize_field("clients", &qwfwd.clients)?;
