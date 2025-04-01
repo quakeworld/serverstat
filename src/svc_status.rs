@@ -1,10 +1,10 @@
 use crate::client::QuakeClient;
 use crate::qtv::QtvStream;
-use tinyudp;
 use anyhow::{Result, anyhow as e};
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};
 use std::time::Duration;
+use tinyudp;
 
 pub async fn status_119(address: &str, timeout: Duration) -> Result<Status119Response> {
     // see: https://github.com/QW-Group/mvdsv/blob/master/src/sv_main.c#L603-L610

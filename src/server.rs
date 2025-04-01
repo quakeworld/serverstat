@@ -4,104 +4,18 @@ use crate::{svc_qtvusers, svc_status};
 
 use anyhow::Result;
 use quake_serverinfo::Settings;
-use std::fmt::Display;
 use std::time::Duration;
+
+use crate::server_type::ServerType;
+use crate::software_type::SoftwareType;
 
 #[cfg(feature = "json")]
 use {
     crate::gameserver::GameServer,
     crate::qtv::QtvServer,
     crate::qwfwd::QwfwdServer,
-    serde::{Deserialize, Serialize, Serializer, ser::SerializeStruct},
+    serde::{Serialize, Serializer, ser::SerializeStruct},
 };
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(
-    feature = "json",
-    derive(Serialize, Deserialize),
-    serde(rename_all = "snake_case")
-)]
-pub enum ServerType {
-    GameServer,
-    ProxyServer,
-    QtvServer,
-    Unknown,
-}
-
-impl Display for ServerType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ServerType::GameServer => write!(f, "GameServer"),
-            ServerType::ProxyServer => write!(f, "ProxyServer"),
-            ServerType::QtvServer => write!(f, "QtvServer"),
-            ServerType::Unknown => write!(f, "Unknown"),
-        }
-    }
-}
-
-impl ServerType {
-    pub fn from_version(version: &str) -> Self {
-        let prefix = version
-            .split_once(' ')
-            .map(|(v, _)| v)
-            .unwrap_or(version)
-            .to_lowercase();
-
-        if ["fo", "fte", "mvdsv"].contains(&prefix.as_str()) {
-            ServerType::GameServer
-        } else if ["qtvgo", "qtv", "qwfwd"].contains(&prefix.as_str()) {
-            ServerType::QtvServer
-        } else if ["qwfwd"].contains(&prefix.as_str()) {
-            ServerType::ProxyServer
-        } else {
-            ServerType::Unknown
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(
-    feature = "json",
-    derive(Serialize, Deserialize),
-    serde(rename_all = "snake_case")
-)]
-pub enum SoftwareType {
-    FortressOne,
-    Fte,
-    Mvdsv,
-    Qtv,
-    Qwfwd,
-    Unknown,
-}
-
-impl Display for SoftwareType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SoftwareType::FortressOne => write!(f, "FortressOne"),
-            SoftwareType::Fte => write!(f, "FTE"),
-            SoftwareType::Mvdsv => write!(f, "MVDSV"),
-            SoftwareType::Qtv => write!(f, "QTV"),
-            SoftwareType::Qwfwd => write!(f, "QWFWD"),
-            SoftwareType::Unknown => write!(f, "Unknown"),
-        }
-    }
-}
-
-impl SoftwareType {
-    pub fn from_version(version: &str) -> Self {
-        let prefix = version.split_once(' ').map(|(v, _)| v).unwrap_or(version);
-
-        match prefix.to_lowercase().as_str() {
-            "fo" => SoftwareType::FortressOne,
-            "fte" => SoftwareType::Fte,
-            "mvdsv" => SoftwareType::Mvdsv,
-            "qtvgo" => SoftwareType::Qtv,
-            "qtv" => SoftwareType::Qtv,
-            "qwfwd" => SoftwareType::Qwfwd,
-            _ => SoftwareType::Unknown,
-        }
-    }
-}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QuakeServer {
