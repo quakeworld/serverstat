@@ -2,11 +2,11 @@ use crate::client::QuakeClient;
 use crate::server::QuakeServer;
 use quake_serverinfo::Settings;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QwfwdServer {
     pub settings: QwfwdSettings,
     pub clients: Vec<QwfwdClient>,
@@ -21,7 +21,7 @@ impl From<&QuakeServer> for QwfwdServer {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QwfwdSettings {
     pub hostname: String,
     pub maxclients: u32,
@@ -47,7 +47,7 @@ impl From<&Settings> for QwfwdSettings {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QwfwdClient {
     pub id: u32,
     pub time: u32,

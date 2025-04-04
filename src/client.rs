@@ -4,11 +4,11 @@ use quake_text::{bytestr, unicode};
 
 use std::cmp::Ordering;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuakeClient {
     pub id: u32,
     pub name: String,

@@ -5,11 +5,11 @@ use crate::client::QuakeClient;
 use crate::server::QuakeServer;
 use crate::tokenize;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvServer {
     pub settings: QtvSettings,
     pub clients: Vec<QtvClient>,
@@ -24,7 +24,7 @@ impl From<&QuakeServer> for QtvServer {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvSettings {
     pub hostname: String,
     pub maxclients: u32,
@@ -42,7 +42,7 @@ impl From<&Settings> for QtvSettings {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvClient {
     pub id: u32,
     pub time: u32,
@@ -60,7 +60,7 @@ impl From<&QuakeClient> for QtvClient {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvStream {
     pub id: u32,
     pub name: String,

@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(
-    feature = "json",
+    feature = "serde",
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]

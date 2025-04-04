@@ -29,4 +29,4 @@ pretty_assertions = "1.4.1"
 
 [features]
 ci = []
-json = ["dep:serde"]
+serde = ["dep:serde"]
