@@ -87,7 +87,7 @@ impl Serialize for QuakeServer {
             state.serialize_field("teams", &server.teams)?;
             state.serialize_field("players", &server.players)?;
             state.serialize_field("spectators", &server.spectators)?;
-            state.serialize_field("qtv_stream", &self.qtv_stream)?;
+            state.serialize_field("qtv_stream", &server.qtv_stream)?;
         }
 
         state.end()
