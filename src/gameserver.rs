@@ -15,6 +15,7 @@ pub struct GameServer {
     pub teams: Vec<Team>,
     pub players: Vec<Player>,
     pub spectators: Vec<Spectator>,
+    pub qtv_stream: Option<QtvStream>,
 }
 
 impl From<&QuakeServer> for GameServer {
@@ -44,6 +45,7 @@ impl From<&QuakeServer> for GameServer {
             teams,
             players,
             spectators,
+            qtv_stream: server.qtv_stream.clone(),
         }
     }
 }
