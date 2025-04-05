@@ -81,14 +81,9 @@ impl PartialOrd for QuakeClient {
 
 impl Ord for QuakeClient {
     fn cmp(&self, other: &Self) -> Ordering {
-        let frags_cmp = self.frags.cmp(&other.frags).reverse();
-        if frags_cmp != Ordering::Equal {
-            frags_cmp
-        } else {
-            let self_normalized = unicode::to_utf8(&self.name).to_lowercase();
-            let other_normalized = unicode::to_utf8(&other.name).to_lowercase();
-            self_normalized.cmp(&other_normalized)
-        }
+        let self_normalized = unicode::to_utf8(&self.name).to_lowercase();
+        let other_normalized = unicode::to_utf8(&other.name).to_lowercase();
+        self_normalized.cmp(&other_normalized)
     }
 }
 
@@ -177,29 +172,25 @@ mod tests {
         let mut clients = vec![
             QuakeClient {
                 name: "foo".to_string(),
-                frags: 10,
+                ..Default::default()
+            },
+            QuakeClient {
+                name: "áøå2".to_string(),
                 ..Default::default()
             },
             QuakeClient {
                 name: "axe".to_string(),
-                frags: 10,
-                ..Default::default()
-            },
-            QuakeClient {
-                name: "áøå".to_string(),
-                frags: 10,
                 ..Default::default()
             },
             QuakeClient {
                 name: "B".to_string(),
-                frags: 15,
                 ..Default::default()
             },
         ];
         clients.sort();
-        assert_eq!(clients[0].name, "B");
-        assert_eq!(clients[1].name, "axe");
-        assert_eq!(clients[2].name, "áøå");
+        assert_eq!(clients[0].name, "axe");
+        assert_eq!(clients[1].name, "áøå2");
+        assert_eq!(clients[2].name, "B");
         assert_eq!(clients[3].name, "foo");
     }
 }
