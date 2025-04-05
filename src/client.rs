@@ -8,7 +8,7 @@ use std::cmp::Ordering;
 use serde::{Deserialize, Serialize};
 
 const PLAYER_MIN_PING: usize = 12;
-const PLAYER_MAX_PING: usize = 500;
+const PLAYER_MAX_PING: usize = 600;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -81,9 +81,7 @@ impl PartialOrd for QuakeClient {
 
 impl Ord for QuakeClient {
     fn cmp(&self, other: &Self) -> Ordering {
-        let self_normalized = unicode::to_utf8(&self.name).to_lowercase();
-        let other_normalized = unicode::to_utf8(&other.name).to_lowercase();
-        self_normalized.cmp(&other_normalized)
+        unicode::ord(&self.name, &other.name)
     }
 }
 
