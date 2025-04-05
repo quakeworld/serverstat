@@ -176,6 +176,7 @@ mod tests {
                             top_color: 4,
                             bottom_color: 4,
                             is_spectator: false,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -189,6 +190,7 @@ mod tests {
                             top_color: 13,
                             bottom_color: 13,
                             is_spectator: false,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -202,6 +204,7 @@ mod tests {
                             top_color: 4,
                             bottom_color: 4,
                             is_spectator: false,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -215,6 +218,7 @@ mod tests {
                             top_color: 10,
                             bottom_color: 11,
                             is_spectator: true,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -228,6 +232,7 @@ mod tests {
                             top_color: 4,
                             bottom_color: 4,
                             is_spectator: true,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -241,6 +246,7 @@ mod tests {
                             top_color: 13,
                             bottom_color: 13,
                             is_spectator: true,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -254,6 +260,7 @@ mod tests {
                             top_color: 13,
                             bottom_color: 13,
                             is_spectator: false,
+                            is_bot: false,
                             auth_cc: "".to_string(),
                         },
                         QuakeClient {
@@ -267,6 +274,7 @@ mod tests {
                             top_color: 12,
                             bottom_color: 11,
                             is_spectator: true,
+                            is_bot: true,
                             auth_cc: "".to_string(),
                         },
                     ]

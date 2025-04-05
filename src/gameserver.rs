@@ -63,6 +63,7 @@ pub struct Player {
     pub bottom_color: u8,
     pub skin: String,
     pub auth_cc: String,
+    pub is_bot: bool,
 }
 
 impl From<&QuakeClient> for Player {
@@ -77,6 +78,7 @@ impl From<&QuakeClient> for Player {
             top_color: client.top_color,
             bottom_color: client.bottom_color,
             skin: client.skin.clone(),
+            is_bot: client.is_bot,
             auth_cc: client.auth_cc.clone(),
         }
     }
@@ -88,6 +90,7 @@ pub struct Spectator {
     pub id: u32,
     pub name: String,
     pub auth_cc: String,
+    pub is_bot: bool,
 }
 
 impl From<&QuakeClient> for Spectator {
@@ -95,6 +98,7 @@ impl From<&QuakeClient> for Spectator {
         Self {
             id: client.id,
             name: client.name.clone(),
+            is_bot: client.is_bot,
             auth_cc: client.auth_cc.clone(),
         }
     }

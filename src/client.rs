@@ -7,6 +7,9 @@ use std::cmp::Ordering;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+const PLAYER_MIN_PING: usize = 12;
+const PLAYER_MAX_PING: usize = 500;
+
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuakeClient {
@@ -21,6 +24,7 @@ pub struct QuakeClient {
     pub skin: String,
     pub auth_cc: String,
     pub is_spectator: bool,
+    pub is_bot: bool,
 }
 
 impl TryFrom<&[u8]> for QuakeClient {
@@ -45,12 +49,12 @@ impl TryFrom<&[u8]> for QuakeClient {
             _ => "".to_string(),
         };
         let is_spectator = ping_ < 1;
-
         if is_spectator {
             frags = 0;
             name = name.trim_start_matches("\\s\\").to_string();
         }
         let ping = ping_.unsigned_abs();
+        let is_bot = !(PLAYER_MIN_PING..=PLAYER_MAX_PING).contains(&(ping as usize));
 
         Ok(Self {
             id,
@@ -64,6 +68,7 @@ impl TryFrom<&[u8]> for QuakeClient {
             skin,
             auth_cc,
             is_spectator,
+            is_bot,
         })
     }
 }
@@ -113,6 +118,7 @@ mod tests {
                     skin: "".to_string(),
                     auth_cc: "".to_string(),
                     is_spectator: false,
+                    is_bot: false,
                 }
             );
         }
@@ -136,13 +142,14 @@ mod tests {
                     skin: "8".to_string(),
                     auth_cc: "".to_string(),
                     is_spectator: true,
+                    is_bot: false,
                 }
             )
         }
 
         // qtv/qwfwd client
         {
-            let bytes = br#"1446 0 32 666 "Zepp" "" 0 0"#;
+            let bytes = br#"1446 0 32 64 "Zepp" "" 0 0"#;
             let client = QuakeClient::try_from(bytes.as_slice())?;
             assert_eq!(
                 client,
@@ -151,13 +158,14 @@ mod tests {
                     name: "Zepp".to_string(),
                     team: "".to_string(),
                     frags: 0,
-                    ping: 666,
+                    ping: 64,
                     time: 32,
                     top_color: 0,
                     bottom_color: 0,
                     skin: "".to_string(),
                     auth_cc: "".to_string(),
                     is_spectator: false,
+                    is_bot: false,
                 }
             );
         }
