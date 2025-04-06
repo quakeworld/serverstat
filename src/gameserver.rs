@@ -1,10 +1,10 @@
 use crate::client::QuakeClient;
+use crate::qtv::QtvStream;
 use crate::server::QuakeServer;
 use crate::team;
 use crate::team::Team;
 use quake_serverinfo::Settings;
-
-use crate::qtv::QtvStream;
+use quake_text::unicode;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -23,11 +23,17 @@ impl From<&QuakeServer> for GameServer {
         let mut clients = server.clients.clone();
         clients.sort();
 
-        let players: Vec<Player> = clients
+        let is_teamplay = server.settings.teamplay.is_some_and(|tp| tp > 0);
+
+        let mut players: Vec<Player> = clients
             .iter()
             .filter(|c| !c.is_spectator)
             .map(Player::from)
             .collect();
+
+        if is_teamplay {
+            players.sort_by(|a, b| unicode::ord(&a.team, &b.team));
+        }
 
         let spectators: Vec<Spectator> = clients
             .iter()
@@ -35,8 +41,8 @@ impl From<&QuakeServer> for GameServer {
             .map(Spectator::from)
             .collect();
 
-        let teams = match server.settings.teamplay {
-            Some(tp) if tp > 0 => team::from_players(&players),
+        let teams = match is_teamplay {
+            true => team::from_players(&players),
             _ => vec![],
         };
 
