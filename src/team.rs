@@ -1,11 +1,13 @@
 use crate::gameserver::Player;
+use quake_text::unicode;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Team {
     pub name: String,
     pub frags: i32,
@@ -39,7 +41,6 @@ pub fn from_players(players: &[Player]) -> Vec<Team> {
     let mut teams: Vec<Team> = Vec::new();
     for team in temp.values() {
         let (top_color, bottom_color) = get_majority_color(&team.colors);
-
         teams.push(Team {
             name: team.name.clone(),
             frags: team.frags,
@@ -48,8 +49,20 @@ pub fn from_players(players: &[Player]) -> Vec<Team> {
             bottom_color,
         });
     }
-    teams.sort_by(|a, b| b.frags.cmp(&a.frags).then(a.name.cmp(&b.name)));
+    teams.sort();
     teams
+}
+
+impl PartialOrd for Team {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Team {
+    fn cmp(&self, other: &Self) -> Ordering {
+        unicode::ord(&self.name, &other.name)
+    }
 }
 
 fn get_majority_color(colors: &[(u8, u8)]) -> (u8, u8) {
@@ -128,22 +141,22 @@ mod tests {
         assert_eq!(
             teams[0],
             Team {
-                name: "red".to_string(),
-                frags: 17,
-                ping: 21,
-                top_color: 4,
-                bottom_color: 4,
+                name: "blue".to_string(),
+                frags: 7,
+                ping: 52,
+                top_color: 13,
+                bottom_color: 13,
             }
         );
 
         assert_eq!(
             teams[1],
             Team {
-                name: "blue".to_string(),
-                frags: 7,
-                ping: 52,
-                top_color: 13,
-                bottom_color: 13,
+                name: "red".to_string(),
+                frags: 17,
+                ping: 21,
+                top_color: 4,
+                bottom_color: 4,
             }
         );
 

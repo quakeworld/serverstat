@@ -9,7 +9,7 @@ use std::time::Duration;
 use crate::server_type::ServerType;
 use crate::software_type::SoftwareType;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use {
     crate::gameserver::GameServer,
     crate::qtv::QtvServer,
@@ -57,7 +57,7 @@ impl QuakeServer {
     }
 }
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 impl Serialize for QuakeServer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -87,7 +87,7 @@ impl Serialize for QuakeServer {
             state.serialize_field("teams", &server.teams)?;
             state.serialize_field("players", &server.players)?;
             state.serialize_field("spectators", &server.spectators)?;
-            state.serialize_field("qtv_stream", &self.qtv_stream)?;
+            state.serialize_field("qtv_stream", &server.qtv_stream)?;
         }
 
         state.end()
