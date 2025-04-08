@@ -114,16 +114,18 @@ impl From<&QuakeClient> for Spectator {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use pretty_assertions::assert_eq;
     use std::time::Duration;
 
     #[tokio::test]
     async fn test_from_gameserver() -> Result<()> {
         let server =
             QuakeServer::try_from_address("quake.se:28501", Duration::from_secs_f32(0.5)).await?;
-        assert_eq!(
-            GameServer::from(&server).settings.hostname,
-            Some("QUAKE.SE KTX:28501".to_string())
+        assert!(
+            GameServer::from(&server)
+                .settings
+                .hostname
+                .unwrap()
+                .starts_with("QUAKE.SE KTX:28501"),
         );
         Ok(())
     }

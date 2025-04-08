@@ -65,6 +65,8 @@ pub struct QtvStream {
     pub id: u32,
     pub name: String,
     pub url: String,
+    pub number: u32,
+    pub hostport: String,
     pub client_count: u32,
     pub client_names: Vec<String>,
 }
@@ -75,14 +77,24 @@ impl TryFrom<&[u8]> for QtvStream {
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         let parts: Vec<String> = tokenize::tokenize(to_unicode(bytes).as_str());
         let id: u32 = parts[1].parse()?;
-        let name: String = parts[2].to_string();
-        let url: String = parts[3].to_string();
+        let name = parts[2].to_string();
+        let url = parts[3].to_string();
+
+        let (number, hostport) = match url.split_once('@') {
+            Some((number_str, hostport)) => {
+                let number = number_str.parse::<u32>().unwrap_or_default();
+                (number, hostport.to_string())
+            }
+            None => (0, url.clone()),
+        };
         let client_count: u32 = parts[4].parse()?;
 
         Ok(Self {
             id,
             name,
             url,
+            number,
+            hostport,
             client_count,
             client_names: vec![],
         })
@@ -104,6 +116,24 @@ mod tests {
             QtvServer::from(&server).settings.hostname,
             "QUAKE.SE KTX Qtv"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_qtv_stream_from_bytes() -> Result<()> {
+        assert_eq!(
+            QtvStream::try_from(br#"nqtv 1 "dm6.uk Qtv (7)" "7@dm6.uk:28000" 4"#.as_ref())?,
+            QtvStream {
+                id: 1,
+                name: "dm6.uk Qtv (7)".to_string(),
+                url: "7@dm6.uk:28000".to_string(),
+                number: 7,
+                hostport: "dm6.uk:28000".to_string(),
+                client_count: 4,
+                client_names: vec![],
+            }
+        );
+
         Ok(())
     }
 }

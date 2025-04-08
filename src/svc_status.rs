@@ -157,6 +157,8 @@ mod tests {
                         id: 1,
                         name: "zasadzka Qtv (2)".to_string(),
                         url: "2@zasadzka.pl:28000".to_string(),
+                        number: 2,
+                        hostport: "zasadzka.pl:28000".to_string(),
                         client_count: 2,
                         client_names: vec![],
                     })
