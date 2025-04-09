@@ -4,7 +4,7 @@ description = "Get server info from QuakeWorld servers."
 keywords = ["servers", "quake", "quakeworld"]
 repository = "https://github.com/quakeworld/serverstat"
 authors = ["Viktor Persson <viktor.persson@arcsin.se>"]
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 license = "MIT"
 include = [
@@ -29,4 +29,4 @@ pretty_assertions = "1.4.1"
 
 [features]
 ci = []
-serde = ["dep:serde"]
+json = ["dep:serde"]

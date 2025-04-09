@@ -5,11 +5,11 @@ use crate::team;
 use crate::team::Team;
 use quake_serverinfo::Settings;
 use quake_text::unicode;
-#[cfg(feature = "serde")]
+#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GameServer {
     pub settings: Settings,
     pub teams: Vec<Team>,
@@ -57,7 +57,7 @@ impl From<&QuakeServer> for GameServer {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Player {
     pub id: u32,
     pub name: String,
@@ -91,7 +91,7 @@ impl From<&QuakeClient> for Player {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Spectator {
     pub id: u32,
     pub name: String,
