@@ -66,7 +66,9 @@ pub struct QtvStream {
     pub name: String,
     pub url: String,
     pub number: u32,
-    pub hostport: String,
+    pub address: String,
+    pub host: String,
+    pub port: u16,
     pub client_count: u32,
     pub client_names: Vec<String>,
 }
@@ -80,7 +82,7 @@ impl TryFrom<&[u8]> for QtvStream {
         let name = parts[2].to_string();
         let url = parts[3].to_string();
 
-        let (number, hostport) = match url.split_once('@') {
+        let (number, address) = match url.split_once('@') {
             Some((number_str, hostport)) => {
                 let number = number_str.parse::<u32>().unwrap_or_default();
                 (number, hostport.to_string())
@@ -89,12 +91,22 @@ impl TryFrom<&[u8]> for QtvStream {
         };
         let client_count: u32 = parts[4].parse()?;
 
+        let (host, port) = match address.split_once(':') {
+            Some((host, port_str)) => {
+                let port = port_str.parse::<u16>().unwrap_or_default();
+                (host.to_string(), port)
+            }
+            None => (address.clone(), 0),
+        };
+
         Ok(Self {
             id,
             name,
             url,
             number,
-            hostport,
+            address,
+            host,
+            port,
             client_count,
             client_names: vec![],
         })
@@ -128,7 +140,9 @@ mod tests {
                 name: "dm6.uk Qtv (7)".to_string(),
                 url: "7@dm6.uk:28000".to_string(),
                 number: 7,
-                hostport: "dm6.uk:28000".to_string(),
+                address: "dm6.uk:28000".to_string(),
+                host: "dm6.uk".to_string(),
+                port: 28000,
                 client_count: 4,
                 client_names: vec![],
             }
