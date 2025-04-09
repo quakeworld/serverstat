@@ -3,7 +3,7 @@ use crate::qtv::QtvStream;
 use crate::server::QuakeServer;
 use crate::team;
 use crate::team::Team;
-use quake_serverinfo::Settings;
+pub use quake_serverinfo::Settings;
 use quake_text::unicode;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
