@@ -63,12 +63,12 @@ impl From<&QuakeClient> for QtvClient {
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvStream {
     pub id: u32,
-    pub name: String,
-    pub url: String,
     pub number: u32,
-    pub address: String,
+    pub name: String,
     pub host: String,
     pub port: u16,
+    pub address: String,
+    pub url: String,
     pub client_count: u32,
     pub client_names: Vec<String>,
 }

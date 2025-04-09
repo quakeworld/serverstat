@@ -85,9 +85,9 @@ impl Serialize for QuakeServer {
         let mut state = serializer.serialize_struct("QuakeServer", field_count)?;
         state.serialize_field("server_type", &self.server_type)?;
         state.serialize_field("software_type", &self.software_type)?;
-        state.serialize_field("address", &self.address)?;
         state.serialize_field("host", &self.host())?;
         state.serialize_field("port", &self.port())?;
+        state.serialize_field("address", &self.address)?;
 
         if self.software_type == SoftwareType::Qtv {
             let qtv = QtvServer::from(self);
