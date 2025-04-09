@@ -3,7 +3,7 @@ use crate::qtv::QtvStream;
 use crate::{svc_qtvusers, svc_status};
 
 use anyhow::Result;
-use quake_serverinfo::Settings;
+pub use quake_serverinfo::Settings;
 use std::time::Duration;
 
 use crate::server_type::ServerType;
