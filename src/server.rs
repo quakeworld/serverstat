@@ -1,15 +1,17 @@
-use crate::client::QuakeClient;
-use crate::qtv::QtvStream;
-use crate::{svc_qtvusers, svc_status};
-
 use anyhow::Result;
-use quake_serverinfo::Settings;
 use std::time::Duration;
 
+pub use quake_serverinfo::Settings;
+
+use crate::client::QuakeClient;
+use crate::hostport::Hostport;
+use crate::qtv::QtvStream;
 use crate::server_type::ServerType;
 use crate::software_type::SoftwareType;
+use crate::svc_status;
+use crate::{net_extra, svc_qtvusers};
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "json")]
 use {
     crate::gameserver::GameServer,
     crate::qtv::QtvServer,
@@ -21,7 +23,8 @@ use {
 pub struct QuakeServer {
     pub server_type: ServerType,
     pub software_type: SoftwareType,
-    pub address: String,
+    pub address: Hostport,
+    pub ip: String,
     pub settings: Settings,
     pub clients: Vec<QuakeClient>,
     pub qtv_stream: Option<QtvStream>,
@@ -30,6 +33,7 @@ pub struct QuakeServer {
 impl QuakeServer {
     pub async fn try_from_address(address: &str, timeout: Duration) -> Result<Self> {
         let mut res = svc_status::status_119(address, timeout).await?;
+        let ip = net_extra::address_to_ip(address).unwrap_or_default();
 
         res.qtv_stream = match res.qtv_stream {
             Some(qtv_stream) => {
@@ -44,12 +48,17 @@ impl QuakeServer {
             None => None,
         };
 
+        let address = {
+            let address_str = res.settings.clone().hostport.unwrap_or(address.to_string());
+            Hostport::try_from(address_str.as_str())?
+        };
         let version = res.settings.version.as_deref().unwrap_or("");
 
         Ok(QuakeServer {
             server_type: ServerType::from_version(version),
             software_type: SoftwareType::from_version(version),
-            address: address.to_string(),
+            address,
+            ip,
             settings: res.settings,
             clients: res.clients,
             qtv_stream: res.qtv_stream,
@@ -57,13 +66,13 @@ impl QuakeServer {
     }
 }
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "json")]
 impl Serialize for QuakeServer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        let field_count: usize = 2 + match self.software_type {
+        let field_count: usize = 6 + match self.software_type {
             SoftwareType::Qtv | SoftwareType::Qwfwd => 2,
             _ => 5,
         };
@@ -71,6 +80,9 @@ impl Serialize for QuakeServer {
         let mut state = serializer.serialize_struct("QuakeServer", field_count)?;
         state.serialize_field("server_type", &self.server_type)?;
         state.serialize_field("software_type", &self.software_type)?;
+        state.serialize_field("host", &self.address.host)?;
+        state.serialize_field("ip", &self.ip)?;
+        state.serialize_field("port", &self.address.port)?;
         state.serialize_field("address", &self.address)?;
 
         if self.software_type == SoftwareType::Qtv {
@@ -98,6 +110,7 @@ impl Serialize for QuakeServer {
 mod tests {
     use super::*;
     use anyhow::Result;
+    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn test_try_from_address() -> Result<()> {
@@ -106,13 +119,23 @@ mod tests {
                 .await
                 .is_err()
         );
+        let server =
+            QuakeServer::try_from_address("quake.se:28501", Duration::from_secs_f32(0.5)).await?;
+
         assert!(
-            QuakeServer::try_from_address("quake.se:28501", Duration::from_secs_f32(0.5))
-                .await?
+            server
+                .clone()
                 .settings
                 .hostname
                 .unwrap()
                 .starts_with("QUAKE.SE KTX:28501")
+        );
+        assert_eq!(
+            server.address,
+            Hostport {
+                host: "quake.se".to_string(),
+                port: 28501,
+            }
         );
         Ok(())
     }

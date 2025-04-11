@@ -85,6 +85,7 @@ mod tests {
     use super::*;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
+    use crate::hostport::Hostport;
 
     #[test]
     fn test_try_from() -> Result<()> {
@@ -156,9 +157,11 @@ mod tests {
                     Some(QtvStream {
                         id: 1,
                         name: "zasadzka Qtv (2)".to_string(),
-                        url: "2@zasadzka.pl:28000".to_string(),
                         number: 2,
-                        hostport: "zasadzka.pl:28000".to_string(),
+                        address: Hostport{
+                            host: "zasadzka.pl".to_string(),
+                            port: 28000,
+                        },
                         client_count: 2,
                         client_names: vec![],
                     })

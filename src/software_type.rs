@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(
-    feature = "serde",
+    feature = "json",
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -50,6 +50,16 @@ impl SoftwareType {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_display() {
+        assert_eq!(SoftwareType::FortressOne.to_string(), "FortressOne");
+        assert_eq!(SoftwareType::Fte.to_string(), "FTE");
+        assert_eq!(SoftwareType::Mvdsv.to_string(), "MVDSV");
+        assert_eq!(SoftwareType::Qtv.to_string(), "QTV");
+        assert_eq!(SoftwareType::Qwfwd.to_string(), "QWFWD");
+        assert_eq!(SoftwareType::Unknown.to_string(), "Unknown");
+    }
 
     #[test]
     fn test_from_version() {

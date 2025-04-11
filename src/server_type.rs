@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(
-    feature = "serde",
+    feature = "json",
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]
@@ -50,6 +50,14 @@ impl ServerType {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_display() {
+        assert_eq!(ServerType::GameServer.to_string(), "GameServer");
+        assert_eq!(ServerType::ProxyServer.to_string(), "ProxyServer");
+        assert_eq!(ServerType::QtvServer.to_string(), "QtvServer");
+        assert_eq!(ServerType::Unknown.to_string(), "Unknown");
+    }
 
     #[test]
     fn test_from_version() {

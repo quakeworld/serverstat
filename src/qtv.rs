@@ -5,11 +5,12 @@ use crate::client::QuakeClient;
 use crate::server::QuakeServer;
 use crate::tokenize;
 
-#[cfg(feature = "serde")]
+use crate::hostport::Hostport;
+#[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvServer {
     pub settings: QtvSettings,
     pub clients: Vec<QtvClient>,
@@ -24,7 +25,7 @@ impl From<&QuakeServer> for QtvServer {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvSettings {
     pub hostname: String,
     pub maxclients: u32,
@@ -42,7 +43,7 @@ impl From<&Settings> for QtvSettings {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvClient {
     pub id: u32,
     pub time: u32,
@@ -60,15 +61,20 @@ impl From<&QuakeClient> for QtvClient {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvStream {
     pub id: u32,
     pub name: String,
-    pub url: String,
     pub number: u32,
-    pub hostport: String,
+    pub address: Hostport,
     pub client_count: u32,
     pub client_names: Vec<String>,
+}
+
+impl QtvStream {
+    pub fn url(&self) -> String {
+        format!("{}@{}", self.number, self.address)
+    }
 }
 
 impl TryFrom<&[u8]> for QtvStream {
@@ -79,8 +85,7 @@ impl TryFrom<&[u8]> for QtvStream {
         let id: u32 = parts[1].parse()?;
         let name = parts[2].to_string();
         let url = parts[3].to_string();
-
-        let (number, hostport) = match url.split_once('@') {
+        let (number, address) = match url.split_once('@') {
             Some((number_str, hostport)) => {
                 let number = number_str.parse::<u32>().unwrap_or_default();
                 (number, hostport.to_string())
@@ -88,13 +93,13 @@ impl TryFrom<&[u8]> for QtvStream {
             None => (0, url.clone()),
         };
         let client_count: u32 = parts[4].parse()?;
+        let address = Hostport::try_from(address.as_str())?;
 
         Ok(Self {
             id,
             name,
-            url,
             number,
-            hostport,
+            address,
             client_count,
             client_names: vec![],
         })
@@ -120,20 +125,59 @@ mod tests {
     }
 
     #[test]
+    fn test_qtv_stream_methods() {
+        let stream = QtvStream {
+            number: 2,
+            address: Hostport {
+                host: "dm6.uk".to_string(),
+                port: 28000,
+            },
+            ..Default::default()
+        };
+        assert_eq!(stream.url(), "2@dm6.uk:28000".to_string());
+    }
+
+    #[test]
     fn test_qtv_stream_from_bytes() -> Result<()> {
         assert_eq!(
             QtvStream::try_from(br#"nqtv 1 "dm6.uk Qtv (7)" "7@dm6.uk:28000" 4"#.as_ref())?,
             QtvStream {
                 id: 1,
                 name: "dm6.uk Qtv (7)".to_string(),
-                url: "7@dm6.uk:28000".to_string(),
                 number: 7,
-                hostport: "dm6.uk:28000".to_string(),
+                address: Hostport {
+                    host: "dm6.uk".to_string(),
+                    port: 28000,
+                },
                 client_count: 4,
                 client_names: vec![],
             }
         );
-
         Ok(())
+    }
+
+    #[test]
+    fn test_from_quakeclient() {
+        assert_eq!(
+            QtvClient::from(&QuakeClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                team: "f0m".to_string(),
+                frags: 12,
+                ping: 25,
+                time: 15,
+                top_color: 4,
+                bottom_color: 2,
+                skin: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_spectator: false,
+                is_bot: false,
+            }),
+            QtvClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                time: 15,
+            }
+        );
     }
 }
