@@ -6,7 +6,7 @@ use crate::net_extra;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Ord, PartialOrd, Eq, PartialEq)]
 pub struct Hostport {
     pub host: String,
     pub port: u16,
