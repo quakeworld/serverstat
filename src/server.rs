@@ -1,7 +1,6 @@
 use crate::client::QuakeClient;
 use crate::qtv::QtvStream;
-use crate::{svc_qtvusers, svc_status};
-
+use crate::{net_extra, svc_qtvusers, svc_status};
 use anyhow::Result;
 pub use quake_serverinfo::Settings;
 use std::time::Duration;
@@ -56,6 +55,10 @@ impl QuakeServer {
         })
     }
 
+    pub fn ip(&self) -> String {
+        net_extra::address_to_ipv4(&self.address).unwrap_or_default()
+    }
+
     pub fn host(&self) -> String {
         self.address
             .split_once(':')
@@ -77,7 +80,7 @@ impl Serialize for QuakeServer {
     where
         S: Serializer,
     {
-        let field_count: usize = 4 + match self.software_type {
+        let field_count: usize = 5 + match self.software_type {
             SoftwareType::Qtv | SoftwareType::Qwfwd => 2,
             _ => 5,
         };
@@ -86,6 +89,7 @@ impl Serialize for QuakeServer {
         state.serialize_field("server_type", &self.server_type)?;
         state.serialize_field("software_type", &self.software_type)?;
         state.serialize_field("host", &self.host())?;
+        state.serialize_field("ip", &self.ip())?;
         state.serialize_field("port", &self.port())?;
         state.serialize_field("address", &self.address)?;
 

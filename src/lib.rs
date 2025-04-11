@@ -3,6 +3,7 @@
 
 pub mod client;
 pub mod gameserver;
+pub mod net_extra;
 pub mod qtv;
 pub mod qwfwd;
 pub mod server;
