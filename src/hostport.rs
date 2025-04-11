@@ -30,6 +30,10 @@ impl Hostport {
     pub fn ip(&self) -> String {
         net_extra::address_to_ip(&self.to_string()).unwrap_or_default()
     }
+
+    pub fn to_ip_string(&self) -> String {
+        format!("{}:{}", self.ip(), self.port)
+    }
 }
 
 impl Display for Hostport {
@@ -83,6 +87,15 @@ mod tests {
             port: 28501,
         };
         assert_eq!(hostport.to_string(), "quake.se:28501");
+    }
+
+    #[test]
+    fn test_to_ip_string() {
+        let hostport = Hostport {
+            host: "one.one.one.one".to_string(),
+            port: 28501,
+        };
+        assert!(["1.1.1.1:28501", "1.0.0.1:28501"].contains(&hostport.to_ip_string().as_str()));
     }
 
     #[test]
