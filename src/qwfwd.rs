@@ -81,4 +81,29 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn test_from_quakeclient() {
+        assert_eq!(
+            QwfwdClient::from(&QuakeClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                team: "f0m".to_string(),
+                frags: 12,
+                ping: 25,
+                time: 15,
+                top_color: 4,
+                bottom_color: 2,
+                skin: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_spectator: false,
+                is_bot: false,
+            }),
+            QwfwdClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                time: 15,
+            }
+        );
+    }
 }

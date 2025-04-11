@@ -52,6 +52,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_display() {
+        assert_eq!(ServerType::GameServer.to_string(), "GameServer");
+        assert_eq!(ServerType::ProxyServer.to_string(), "ProxyServer");
+        assert_eq!(ServerType::QtvServer.to_string(), "QtvServer");
+        assert_eq!(ServerType::Unknown.to_string(), "Unknown");
+    }
+
+    #[test]
     fn test_from_version() {
         assert_eq!(
             ServerType::from_version("fo     1.0"),

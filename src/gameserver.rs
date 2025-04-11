@@ -5,6 +5,7 @@ use crate::team;
 use crate::team::Team;
 pub use quake_serverinfo::Settings;
 use quake_text::unicode;
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -128,5 +129,64 @@ mod tests {
                 .starts_with("QUAKE.SE KTX:28501"),
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_player_from_quakeclient() {
+        assert_eq!(
+            Player::from(&QuakeClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                team: "f0m".to_string(),
+                frags: 12,
+                ping: 25,
+                time: 15,
+                top_color: 4,
+                bottom_color: 2,
+                skin: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_spectator: false,
+                is_bot: false,
+            }),
+            Player {
+                id: 7,
+                name: "XantoM".to_string(),
+                team: "f0m".to_string(),
+                frags: 12,
+                ping: 25,
+                time: 15,
+                top_color: 4,
+                bottom_color: 2,
+                skin: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_bot: false,
+            }
+        );
+    }
+
+    #[test]
+    fn test_specator_from_quakeclient() {
+        assert_eq!(
+            Spectator::from(&QuakeClient {
+                id: 7,
+                name: "XantoM".to_string(),
+                team: "f0m".to_string(),
+                frags: 12,
+                ping: 25,
+                time: 15,
+                top_color: 4,
+                bottom_color: 2,
+                skin: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_spectator: false,
+                is_bot: false,
+            }),
+            Spectator {
+                id: 7,
+                name: "XantoM".to_string(),
+                auth_cc: "xtm".to_string(),
+                is_bot: false,
+            }
+        );
     }
 }
