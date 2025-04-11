@@ -1,12 +1,15 @@
-use crate::client::QuakeClient;
-use crate::qtv::QtvStream;
-use crate::{net_extra, svc_qtvusers, svc_status};
 use anyhow::Result;
-pub use quake_serverinfo::Settings;
 use std::time::Duration;
 
+pub use quake_serverinfo::Settings;
+
+use crate::client::QuakeClient;
+use crate::hostport::Hostport;
+use crate::qtv::QtvStream;
 use crate::server_type::ServerType;
 use crate::software_type::SoftwareType;
+use crate::svc_qtvusers;
+use crate::svc_status;
 
 #[cfg(feature = "json")]
 use {
@@ -20,7 +23,7 @@ use {
 pub struct QuakeServer {
     pub server_type: ServerType,
     pub software_type: SoftwareType,
-    pub address: String,
+    pub address: Hostport,
     pub settings: Settings,
     pub clients: Vec<QuakeClient>,
     pub qtv_stream: Option<QtvStream>,
@@ -29,7 +32,6 @@ pub struct QuakeServer {
 impl QuakeServer {
     pub async fn try_from_address(address: &str, timeout: Duration) -> Result<Self> {
         let mut res = svc_status::status_119(address, timeout).await?;
-
         res.qtv_stream = match res.qtv_stream {
             Some(qtv_stream) => {
                 let res = svc_qtvusers::qtvusers(address, timeout)
@@ -42,35 +44,16 @@ impl QuakeServer {
             }
             None => None,
         };
-
         let version = res.settings.version.as_deref().unwrap_or("");
 
         Ok(QuakeServer {
             server_type: ServerType::from_version(version),
             software_type: SoftwareType::from_version(version),
-            address: address.to_string(),
+            address: Hostport::try_from(address)?,
             settings: res.settings,
             clients: res.clients,
             qtv_stream: res.qtv_stream,
         })
-    }
-
-    pub fn ip(&self) -> String {
-        net_extra::address_to_ipv4(&self.address).unwrap_or_default()
-    }
-
-    pub fn host(&self) -> String {
-        self.address
-            .split_once(':')
-            .map(|(host, _)| host.to_string())
-            .unwrap_or_default()
-    }
-
-    pub fn port(&self) -> u16 {
-        self.address
-            .split_once(':')
-            .and_then(|(_, port)| port.parse::<u16>().ok())
-            .unwrap_or_default()
     }
 }
 
@@ -80,7 +63,7 @@ impl Serialize for QuakeServer {
     where
         S: Serializer,
     {
-        let field_count: usize = 5 + match self.software_type {
+        let field_count: usize = 6 + match self.software_type {
             SoftwareType::Qtv | SoftwareType::Qwfwd => 2,
             _ => 5,
         };
@@ -88,9 +71,9 @@ impl Serialize for QuakeServer {
         let mut state = serializer.serialize_struct("QuakeServer", field_count)?;
         state.serialize_field("server_type", &self.server_type)?;
         state.serialize_field("software_type", &self.software_type)?;
-        state.serialize_field("host", &self.host())?;
-        state.serialize_field("ip", &self.ip())?;
-        state.serialize_field("port", &self.port())?;
+        state.serialize_field("host", &self.address.host)?;
+        state.serialize_field("ip", &self.address.ip())?;
+        state.serialize_field("port", &self.address.port)?;
         state.serialize_field("address", &self.address)?;
 
         if self.software_type == SoftwareType::Qtv {
@@ -138,9 +121,13 @@ mod tests {
                 .unwrap()
                 .starts_with("QUAKE.SE KTX:28501")
         );
-
-        assert_eq!(server.host(), "quake.se");
-        assert_eq!(server.port(), 28501);
+        assert_eq!(
+            server.address,
+            Hostport {
+                host: "quake.se".to_string(),
+                port: 28501,
+            }
+        );
         Ok(())
     }
 }
