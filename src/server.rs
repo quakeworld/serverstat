@@ -153,7 +153,7 @@ mod tests {
                 country_name: Some("Germany".to_string()),
                 coords: Some(Coordinates {
                     lat: 52.5200,
-                    long: 13.4050,
+                    lng: 13.4050,
                 }),
             }
         );
@@ -181,13 +181,13 @@ mod tests {
                 country_name: Some("United States".to_string()),
                 coords: Some(Coordinates {
                     lat: 40.7128,
-                    long: -74.0060,
+                    lng: -74.0060,
                 }),
             },
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"game_server","software_type":"mvdsv","host":"localhost","ip":"10.10.10.10","port":27500,"address":"localhost:27500","settings":{"admin":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"long":-74.006}}}"#
+            r#"{"server_type":"game_server","software_type":"mvdsv","host":"localhost","ip":"10.10.10.10","port":27500,"address":"localhost:27500","settings":{"admin":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }
@@ -212,13 +212,13 @@ mod tests {
                 country_name: Some("United States".to_string()),
                 coords: Some(Coordinates {
                     lat: 40.7128,
-                    long: -74.0060,
+                    lng: -74.0060,
                 }),
             },
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"qtv_server","software_type":"qtv","host":"localhost qtv","ip":"10.10.10.10","port":28000,"address":"localhost qtv:28000","settings":{"hostname":"","maxclients":0,"version":""},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"long":-74.006}}}"#
+            r#"{"server_type":"qtv_server","software_type":"qtv","host":"localhost qtv","ip":"10.10.10.10","port":28000,"address":"localhost qtv:28000","settings":{"hostname":"","maxclients":0,"version":""},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }
@@ -243,13 +243,13 @@ mod tests {
                 country_name: Some("United States".to_string()),
                 coords: Some(Coordinates {
                     lat: 40.7128,
-                    long: -74.0060,
+                    lng: -74.0060,
                 }),
             },
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"proxy_server","software_type":"qwfwd","host":"localhost proxy","ip":"10.10.10.10","port":30000,"address":"localhost proxy:30000","settings":{"hostname":"","maxclients":0,"version":"","city":null,"coords":null,"countrycode":null,"hostport":null},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"long":-74.006}}}"#
+            r#"{"server_type":"proxy_server","software_type":"qwfwd","host":"localhost proxy","ip":"10.10.10.10","port":30000,"address":"localhost proxy:30000","settings":{"hostname":"","maxclients":0,"version":"","city":null,"coords":null,"countrycode":null,"hostport":null},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }

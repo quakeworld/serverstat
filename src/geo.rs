@@ -19,7 +19,7 @@ pub struct GeoInfo {
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Coordinates {
     pub lat: f64,
-    pub long: f64,
+    pub lng: f64,
 }
 
 impl TryFrom<&str> for Coordinates {
@@ -31,7 +31,7 @@ impl TryFrom<&str> for Coordinates {
         if let Some((lat_str, lng_str)) = parts {
             let lat = lat_str.trim().parse::<f64>()?;
             let long = lng_str.trim().parse::<f64>()?;
-            Ok(Self { lat, long })
+            Ok(Self { lat, lng: long })
         } else {
             Err(Error::msg("Invalid coordinate format"))
         }
@@ -338,7 +338,7 @@ pub mod tests {
             Coordinates::try_from("40.7128,-74.0060")?,
             Coordinates {
                 lat: 40.7128,
-                long: -74.0060,
+                lng: -74.0060,
             }
         );
         assert!(Coordinates::try_from("invalid_coords").is_err());
@@ -363,7 +363,7 @@ pub mod tests {
                 region: Some("North America".to_string()),
                 coords: Some(Coordinates {
                     lat: 40.7128,
-                    long: -74.0060,
+                    lng: -74.0060,
                 }),
             }
         );
