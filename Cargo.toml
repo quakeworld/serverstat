@@ -4,7 +4,7 @@ description = "Get server info from QuakeWorld servers."
 keywords = ["servers", "quake", "quakeworld"]
 repository = "https://github.com/quakeworld/serverstat"
 authors = ["Viktor Persson <viktor.persson@arcsin.se>"]
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 license = "MIT"
 include = [
@@ -17,13 +17,13 @@ include = [
 
 [dependencies]
 anyhow = "1.0.97"
-tinyudp = "0.5.1"
+phf = { version = "0.11.3", features = ["macros"] }
 quake_serverinfo = { version = "0.8.0", default-features = false, features = [] }
 quake_text = "0.3.0"
-tokio = { version = "1.44.1", features = ["macros"] }
-
 serde = { optional = true, version = "1.0.219", features = ["derive"] }
 serde_json = { optional = true, version = "1.0.140" }
+tinyudp = "0.5.1"
+tokio = { version = "1.44.1", features = ["macros"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
