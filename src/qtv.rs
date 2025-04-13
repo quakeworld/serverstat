@@ -6,6 +6,9 @@ use crate::server::QuakeServer;
 use crate::tokenize;
 
 use crate::hostport::Hostport;
+use serde::Serializer;
+use serde::ser::SerializeStruct;
+
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
@@ -61,7 +64,7 @@ impl From<&QuakeClient> for QtvClient {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "json", derive(Deserialize))]
 pub struct QtvStream {
     pub id: u32,
     pub name: String,
@@ -103,6 +106,24 @@ impl TryFrom<&[u8]> for QtvStream {
             client_count,
             client_names: vec![],
         })
+    }
+}
+
+#[cfg(feature = "json")]
+impl Serialize for QtvStream {
+    fn serialize<S>(&self, serializer: S) -> anyhow::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("QtvStream", 7)?;
+        state.serialize_field("id", &self.id)?;
+        state.serialize_field("name", &self.name)?;
+        state.serialize_field("number", &self.number)?;
+        state.serialize_field("address", &self.address)?;
+        state.serialize_field("url", &self.url())?;
+        state.serialize_field("client_count", &self.client_count)?;
+        state.serialize_field("client_names", &self.client_names)?;
+        state.end()
     }
 }
 
