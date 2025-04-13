@@ -28,6 +28,7 @@ pub mod tests {
 
     #[tokio::test]
     async fn test_address_to_ip() -> Result<()> {
+        assert!(address_to_ip("INVALID_ADDRESS").is_none());
         assert_eq!(address_to_ip("1.2.3.4"), Some("1.2.3.4".to_string()));
         assert!(
             [Some("1.1.1.1".to_string()), Some("1.0.0.1".to_string())]

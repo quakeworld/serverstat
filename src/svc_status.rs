@@ -83,9 +83,9 @@ impl TryFrom<&[u8]> for Status119Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hostport::Hostport;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
-    use crate::hostport::Hostport;
 
     #[test]
     fn test_try_from() -> Result<()> {
@@ -158,7 +158,7 @@ mod tests {
                         id: 1,
                         name: "zasadzka Qtv (2)".to_string(),
                         number: 2,
-                        address: Hostport{
+                        address: Hostport {
                             host: "zasadzka.pl".to_string(),
                             port: 28000,
                         },

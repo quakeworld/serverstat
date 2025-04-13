@@ -135,7 +135,7 @@ mod tests {
     use std::time::Duration;
 
     #[tokio::test]
-    async fn test_from_gameserver() -> Result<()> {
+    async fn test_qtvserver_from_gameserver() -> Result<()> {
         let server =
             QuakeServer::try_from_address("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
         assert_eq!(
@@ -146,7 +146,7 @@ mod tests {
     }
 
     #[test]
-    fn test_qtv_stream_methods() {
+    fn test_qtvstream_methods() {
         let stream = QtvStream {
             number: 2,
             address: Hostport {
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_qtv_stream_from_bytes() -> Result<()> {
+    fn test_qtvstream_from_bytes() -> Result<()> {
         assert_eq!(
             QtvStream::try_from(br#"nqtv 1 "dm6.uk Qtv (7)" "7@dm6.uk:28000" 4"#.as_ref())?,
             QtvStream {
@@ -178,7 +178,21 @@ mod tests {
     }
 
     #[test]
-    fn test_from_quakeclient() {
+    fn test_qtvstream_serialize() -> Result<()> {
+        let server = QtvStream {
+            number: 7,
+            address: Hostport {
+                host: "dm6.uk".to_string(),
+                port: 28000,
+            },
+            ..Default::default()
+        };
+        assert!(serde_json::to_string(&server)?.contains(r#""url":"7@dm6.uk:28000""#));
+        Ok(())
+    }
+
+    #[test]
+    fn test_qtvclient_from_quakeclient() {
         assert_eq!(
             QtvClient::from(&QuakeClient {
                 id: 7,

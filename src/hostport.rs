@@ -65,6 +65,10 @@ mod tests {
 
     #[test]
     fn test_try_from_str() -> Result<()> {
+        assert_eq!(
+            Hostport::try_from("quake.se").unwrap_err().to_string(),
+            "Invalid hostport format, expected host:port"
+        );
         assert_eq!(Hostport::try_from("quake.se:28501")?, {
             Hostport {
                 host: "quake.se".to_string(),
@@ -76,19 +80,13 @@ mod tests {
 
     #[test]
     fn test_display() {
-        let hostport = Hostport {
-            host: "quake.se".to_string(),
-            port: 28501,
-        };
+        let hostport = Hostport::new("quake.se".to_string(), 28501);
         assert_eq!(hostport.to_string(), "quake.se:28501");
     }
 
     #[test]
     fn test_serialize() -> Result<()> {
-        let hostport = Hostport {
-            host: "quake.se".to_string(),
-            port: 28501,
-        };
+        let hostport = Hostport::new("quake.se".to_string(), 28501);
         assert_eq!(
             serde_json::to_string(&hostport)?,
             r#""quake.se:28501""#.to_string(),
