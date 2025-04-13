@@ -1,17 +1,41 @@
+use anyhow::Error;
 use phf::phf_map;
 use quake_serverinfo::Settings;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
     pub country_code: Option<String>,
     pub country_name: Option<String>,
     pub city: Option<String>,
     pub region: Option<String>,
-    pub coords: Option<String>,
+    pub coords: Option<Coordinates>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub struct Coordinates {
+    pub lat: f64,
+    pub long: f64,
+}
+
+impl TryFrom<&str> for Coordinates {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let parts = value.split_once(',');
+
+        if let Some((lat_str, lng_str)) = parts {
+            let lat = lat_str.trim().parse::<f64>()?;
+            let long = lng_str.trim().parse::<f64>()?;
+            Ok(Self { lat, long })
+        } else {
+            Err(Error::msg("Invalid coordinate format"))
+        }
+    }
 }
 
 impl From<&Settings> for GeoInfo {
@@ -26,12 +50,17 @@ impl From<&Settings> for GeoInfo {
             .map(|cc| info_by_cc(&cc))
             .unwrap_or_default();
 
+        let coords = match &settings.coords {
+            Some(coords) => Coordinates::try_from(coords.as_str()).ok(),
+            None => None,
+        };
+
         Self {
             country_code,
             country_name,
             city: settings.city.clone(),
             region,
-            coords: settings.coords.clone(),
+            coords,
         }
     }
 }
@@ -299,8 +328,22 @@ static COUNTRY_INFO: phf::Map<&'static str, (&'static str, &'static str)> = phf_
 #[cfg(test)]
 pub mod tests {
     use super::*;
+    use anyhow::Result;
     use pretty_assertions::assert_eq;
     use quake_serverinfo::Settings;
+
+    #[test]
+    fn test_coordinates() -> Result<()> {
+        assert_eq!(
+            Coordinates::try_from("40.7128,-74.0060")?,
+            Coordinates {
+                lat: 40.7128,
+                long: -74.0060,
+            }
+        );
+        assert!(Coordinates::try_from("invalid_coords").is_err());
+        Ok(())
+    }
 
     #[test]
     fn test_geo_info() {
@@ -318,7 +361,10 @@ pub mod tests {
                 country_name: Some("United States".to_string()),
                 city: Some("New York".to_string()),
                 region: Some("North America".to_string()),
-                coords: Some("40.7128,-74.0060".to_string()),
+                coords: Some(Coordinates {
+                    lat: 40.7128,
+                    long: -74.0060,
+                }),
             }
         );
     }
