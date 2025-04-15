@@ -20,7 +20,7 @@ use {
     serde::{Serialize, Serializer, ser::SerializeStruct},
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct QuakeServer {
     pub server_type: ServerType,
     pub software_type: SoftwareType,
