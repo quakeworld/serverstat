@@ -5,7 +5,7 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
     pub country_code: Option<String>,
@@ -20,6 +20,13 @@ pub struct GeoInfo {
 pub struct Coordinates {
     pub lat: f64,
     pub lng: f64,
+}
+
+impl Eq for Coordinates {
+    fn assert_receiver_is_total_eq(&self) {
+        // This is a no-op, but it allows us to implement `Eq` for `Coordinates`.
+        // The default implementation of `PartialEq` is sufficient for our needs.
+    }
 }
 
 impl TryFrom<&str> for Coordinates {
