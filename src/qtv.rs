@@ -2,7 +2,7 @@ use quake_serverinfo::Settings;
 use quake_text::bytestr::to_unicode;
 
 use crate::client::QuakeClient;
-use crate::server::QuakeServer;
+use crate::server::{ClientSlots, QuakeServer};
 use crate::tokenize;
 
 use crate::hostport::Hostport;
@@ -24,6 +24,14 @@ impl From<&QuakeServer> for QtvServer {
         let settings = QtvSettings::from(&server.settings);
         let clients = server.clients.iter().map(QtvClient::from).collect();
         Self { settings, clients }
+    }
+}
+
+impl QtvServer {
+    pub fn client_slots(&self) -> ClientSlots {
+        let total = self.settings.maxclients;
+        let used = self.clients.len() as u32;
+        ClientSlots::new(used, total)
     }
 }
 

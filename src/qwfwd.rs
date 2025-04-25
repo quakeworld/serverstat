@@ -1,5 +1,7 @@
-use crate::client::QuakeClient;
-use crate::server::QuakeServer;
+use crate::{
+    client::QuakeClient,
+    server::{ClientSlots, QuakeServer},
+};
 use quake_serverinfo::Settings;
 
 #[cfg(feature = "json")]
@@ -17,6 +19,14 @@ impl From<&QuakeServer> for QwfwdServer {
         let settings = QwfwdSettings::from(&server.settings);
         let clients = server.clients.iter().map(QwfwdClient::from).collect();
         Self { settings, clients }
+    }
+}
+
+impl QwfwdServer {
+    pub fn client_slots(&self) -> ClientSlots {
+        let total = self.settings.maxclients;
+        let used = self.clients.len() as u32;
+        ClientSlots::new(used, total)
     }
 }
 

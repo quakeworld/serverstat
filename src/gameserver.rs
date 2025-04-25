@@ -1,8 +1,8 @@
-use crate::client::QuakeClient;
 use crate::qtv::QtvStream;
 use crate::server::QuakeServer;
 use crate::team;
 use crate::team::Team;
+use crate::{client::QuakeClient, server::ClientSlots};
 pub use quake_serverinfo::Settings;
 use quake_text::unicode;
 
@@ -54,6 +54,24 @@ impl From<&QuakeServer> for GameServer {
             spectators,
             qtv_stream: server.qtv_stream.clone(),
         }
+    }
+}
+
+impl GameServer {
+    pub fn player_slots(&self) -> ClientSlots {
+        let used = self.players.len() as u32;
+        let total = self.settings.maxclients.map(|v| v as u32).unwrap_or(used);
+        ClientSlots::new(used, total)
+    }
+
+    pub fn spectator_slots(&self) -> ClientSlots {
+        let used = self.spectators.len() as u32;
+        let total = self
+            .settings
+            .maxspectators
+            .map(|v| v as u32)
+            .unwrap_or(used);
+        ClientSlots::new(used, total)
     }
 }
 

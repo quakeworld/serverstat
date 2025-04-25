@@ -69,6 +69,21 @@ impl QuakeServer {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "json", derive(serde::Serialize))]
+pub struct ClientSlots {
+    pub total: u32,
+    pub used: u32,
+    pub free: u32,
+}
+
+impl ClientSlots {
+    pub fn new(used: u32, total: u32) -> Self {
+        let free = total.saturating_sub(used);
+        ClientSlots { total, used, free }
+    }
+}
+
 #[cfg(feature = "json")]
 impl Serialize for QuakeServer {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -76,8 +91,8 @@ impl Serialize for QuakeServer {
         S: Serializer,
     {
         let field_count: usize = 7 + match self.software_type {
-            SoftwareType::Qtv | SoftwareType::Qwfwd => 2,
-            _ => 5,
+            SoftwareType::Qtv | SoftwareType::Qwfwd => 3,
+            _ => 7,
         };
 
         let mut state = serializer.serialize_struct("QuakeServer", field_count)?;
@@ -91,14 +106,18 @@ impl Serialize for QuakeServer {
         if self.software_type == SoftwareType::Qtv {
             let qtv = QtvServer::from(self);
             state.serialize_field("settings", &qtv.settings)?;
+            state.serialize_field("client_slots", &qtv.client_slots())?;
             state.serialize_field("clients", &qtv.clients)?;
         } else if self.software_type == SoftwareType::Qwfwd {
             let qwfwd = QwfwdServer::from(self);
             state.serialize_field("settings", &qwfwd.settings)?;
+            state.serialize_field("client_slots", &qwfwd.client_slots())?;
             state.serialize_field("clients", &qwfwd.clients)?;
         } else {
             let server = GameServer::from(self);
             state.serialize_field("settings", &server.settings)?;
+            state.serialize_field("player_slots", &server.player_slots())?;
+            state.serialize_field("spectator_slots", &server.spectator_slots())?;
             state.serialize_field("teams", &server.teams)?;
             state.serialize_field("players", &server.players)?;
             state.serialize_field("spectators", &server.spectators)?;
@@ -187,7 +206,7 @@ mod tests {
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"game_server","software_type":"mvdsv","host":"localhost","ip":"10.10.10.10","port":27500,"address":"localhost:27500","settings":{"admin":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
+            r#"{"server_type":"game_server","software_type":"mvdsv","host":"localhost","ip":"10.10.10.10","port":27500,"address":"localhost:27500","settings":{"admin":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"player_slots":{"total":0,"used":0,"free":0},"spectator_slots":{"total":0,"used":0,"free":0},"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }
@@ -218,7 +237,7 @@ mod tests {
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"qtv_server","software_type":"qtv","host":"localhost qtv","ip":"10.10.10.10","port":28000,"address":"localhost qtv:28000","settings":{"hostname":"","maxclients":0,"version":""},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
+            r#"{"server_type":"qtv_server","software_type":"qtv","host":"localhost qtv","ip":"10.10.10.10","port":28000,"address":"localhost qtv:28000","settings":{"hostname":"","maxclients":0,"version":""},"client_slots":{"total":0,"used":0,"free":0},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }
@@ -249,7 +268,7 @@ mod tests {
         };
         assert_eq!(
             serde_json::to_string(&server)?,
-            r#"{"server_type":"proxy_server","software_type":"qwfwd","host":"localhost proxy","ip":"10.10.10.10","port":30000,"address":"localhost proxy:30000","settings":{"hostname":"","maxclients":0,"version":"","city":null,"coords":null,"countrycode":null,"hostport":null},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
+            r#"{"server_type":"proxy_server","software_type":"qwfwd","host":"localhost proxy","ip":"10.10.10.10","port":30000,"address":"localhost proxy:30000","settings":{"hostname":"","maxclients":0,"version":"","city":null,"coords":null,"countrycode":null,"hostport":null},"client_slots":{"total":0,"used":0,"free":0},"clients":[],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}}}"#
         );
         Ok(())
     }
