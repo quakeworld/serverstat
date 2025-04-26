@@ -1,12 +1,16 @@
-use crate::client::QuakeClient;
 use crate::qtv::QtvStream;
-use anyhow::{Result, anyhow as e};
+use crate::quake_client::QuakeClient;
+use anyhow::Result;
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};
 use std::time::Duration;
-use tinyudp;
+use thiserror::Error;
 
-pub async fn status_119(address: &str, timeout: Duration) -> Result<Status119Response> {
+/// Sends a `status 119` query to the specified address and returns the parsed response.
+pub async fn status_119(
+    address: &str,
+    timeout: Duration,
+) -> Result<Status119Response, Status119ResponseError> {
     // see: https://github.com/QW-Group/mvdsv/blob/master/src/sv_main.c#L603-L610
     // #define STATUS_OLDSTYLE                 0
     // #define STATUS_SERVERINFO               1
@@ -29,22 +33,40 @@ pub async fn status_119(address: &str, timeout: Duration) -> Result<Status119Res
     Ok(response)
 }
 
-#[derive(Debug)]
+/// Represents the response to a `status 119` query.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Status119Response {
-    pub settings: Settings,
-    pub clients: Vec<QuakeClient>,
-    pub qtv_stream: Option<QtvStream>,
+    /// Server settings parsed from the response.
+    settings: Settings,
+    /// List of connected clients.
+    clients: Vec<QuakeClient>,
+    /// Optional QTV stream information.
+    qtv_stream: Option<QtvStream>,
+}
+
+impl Status119Response {
+    pub fn settings(&self) -> &Settings {
+        &self.settings
+    }
+
+    pub fn clients(&self) -> &[QuakeClient] {
+        &self.clients
+    }
+
+    pub fn qtv_stream(&self) -> &Option<QtvStream> {
+        &self.qtv_stream
+    }
 }
 
 impl TryFrom<&[u8]> for Status119Response {
-    type Error = anyhow::Error;
+    type Error = Status119ResponseError;
 
-    fn try_from(bytes: &[u8]) -> Result<Self> {
+    fn try_from(bytes: &[u8]) -> Result<Self, Status119ResponseError> {
         // validate header
         let header = vec![255, 255, 255, 255, 110];
 
         if !bytes.starts_with(&header) {
-            return Err(e!("Invalid header"));
+            return Err(Status119ResponseError::InvalidHeader);
         }
 
         // parse body
@@ -54,7 +76,7 @@ impl TryFrom<&[u8]> for Status119Response {
         const MIN_SERVERINFO_LENGTH: usize = "hostname\\x".len();
 
         if rows.is_empty() || rows[0].len() < MIN_SERVERINFO_LENGTH {
-            return Err(e!("Invalid body"));
+            return Err(Status119ResponseError::InvalidBody);
         }
 
         // parse serverinfo
@@ -80,10 +102,22 @@ impl TryFrom<&[u8]> for Status119Response {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum Status119ResponseError {
+    #[error("UDP error")]
+    UdpError(#[from] tinyudp::TinyudpError),
+
+    #[error("Invalid response header")]
+    InvalidHeader,
+
+    #[error("Invalid response body")]
+    InvalidBody,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hostport::Hostport;
+    use crate::hostport::HostPort;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
@@ -92,11 +126,17 @@ mod tests {
         // invalid
         {
             let res = Status119Response::try_from([0].as_slice());
-            assert_eq!(res.unwrap_err().to_string(), "Invalid header".to_string());
+            assert_eq!(
+                res.unwrap_err().to_string(),
+                "Invalid response header".to_string()
+            );
         }
         {
             let res = Status119Response::try_from([255, 255, 255, 255, 110, 0].as_slice());
-            assert_eq!(res.unwrap_err().to_string(), "Invalid body".to_string());
+            assert_eq!(
+                res.unwrap_err().to_string(),
+                "Invalid response body".to_string()
+            );
         }
 
         // with clients
@@ -148,24 +188,20 @@ mod tests {
 
             {
                 assert_eq!(
-                    res.settings.hostname,
+                    res.settings().hostname,
                     Some("zasadzka:27501 (red vs. blue)\u{87}".to_string())
                 );
 
+                let qtv_stream = res.qtv_stream.unwrap_or_default();
+                assert_eq!(qtv_stream.id(), 1);
+                assert_eq!(qtv_stream.name(), "zasadzka Qtv (2)".to_string());
+                assert_eq!(qtv_stream.number(), 2);
                 assert_eq!(
-                    res.qtv_stream,
-                    Some(QtvStream {
-                        id: 1,
-                        name: "zasadzka Qtv (2)".to_string(),
-                        number: 2,
-                        address: Hostport {
-                            host: "zasadzka.pl".to_string(),
-                            port: 28000,
-                        },
-                        client_count: 2,
-                        client_names: vec![],
-                    })
+                    qtv_stream.address(),
+                    &HostPort::new("zasadzka.pl".to_string(), 28000)?
                 );
+                assert_eq!(qtv_stream.client_count(), 2);
+                assert!(qtv_stream.client_names().is_empty());
 
                 assert_eq!(
                     res.clients,

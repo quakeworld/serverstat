@@ -1,6 +1,7 @@
+//! QWFWD: proxy server
 use crate::{
-    client::QuakeClient,
-    server::{ClientSlots, QuakeServer},
+    quake_client::QuakeClient,
+    quake_server::{ClientSlots, QuakeServer},
 };
 use quake_serverinfo::Settings;
 
@@ -10,14 +11,24 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QwfwdServer {
-    pub settings: QwfwdSettings,
-    pub clients: Vec<QwfwdClient>,
+    settings: QwfwdSettings,
+    clients: Vec<QwfwdClient>,
+}
+
+impl QwfwdServer {
+    pub fn settings(&self) -> &QwfwdSettings {
+        &self.settings
+    }
+
+    pub fn clients(&self) -> &[QwfwdClient] {
+        &self.clients
+    }
 }
 
 impl From<&QuakeServer> for QwfwdServer {
     fn from(server: &QuakeServer) -> Self {
-        let settings = QwfwdSettings::from(&server.settings);
-        let clients = server.clients.iter().map(QwfwdClient::from).collect();
+        let settings = QwfwdSettings::from(server.settings());
+        let clients = server.clients().iter().map(QwfwdClient::from).collect();
         Self { settings, clients }
     }
 }
@@ -33,13 +44,43 @@ impl QwfwdServer {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QwfwdSettings {
-    pub hostname: String,
-    pub maxclients: u32,
-    pub version: String,
-    pub city: Option<String>,
-    pub coords: Option<String>,
-    pub countrycode: Option<String>,
-    pub hostport: Option<String>,
+    hostname: String,
+    maxclients: u32,
+    version: String,
+    city: Option<String>,
+    coords: Option<String>,
+    countrycode: Option<String>,
+    hostport: Option<String>,
+}
+
+impl QwfwdSettings {
+    pub fn hostname(&self) -> &str {
+        &self.hostname
+    }
+
+    pub fn maxclients(&self) -> u32 {
+        self.maxclients
+    }
+
+    pub fn version(&self) -> &str {
+        &self.version
+    }
+
+    pub fn city(&self) -> Option<&str> {
+        self.city.as_deref()
+    }
+
+    pub fn coords(&self) -> Option<&str> {
+        self.coords.as_deref()
+    }
+
+    pub fn countrycode(&self) -> Option<&str> {
+        self.countrycode.as_deref()
+    }
+
+    pub fn hostport(&self) -> Option<&str> {
+        self.hostport.as_deref()
+    }
 }
 
 impl From<&Settings> for QwfwdSettings {

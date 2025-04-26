@@ -1,17 +1,18 @@
 //! # serverstat
 //! Get information from QuakeWorld servers
 
-pub mod client;
-pub mod gameserver;
+// Private modules - implementation details
+pub mod game_server;
 pub mod geo;
 pub mod hostport;
-pub mod net_extra;
+pub(crate) mod net_extra;
 pub mod qtv;
+pub mod quake_client;
+pub mod quake_server;
 pub mod qwfwd;
-pub mod server;
 pub mod server_type;
 pub mod software_type;
-pub mod svc_qtvusers;
-pub mod svc_status;
+pub(crate) mod svc_qtvusers;
+pub(crate) mod svc_status;
 pub mod team;
-pub mod tokenize;
+pub(crate) mod tokenize;

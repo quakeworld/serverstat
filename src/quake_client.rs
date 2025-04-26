@@ -1,3 +1,4 @@
+//! Generic client connected to a server (client, player, spectator)
 use crate::tokenize;
 use anyhow::Result;
 use quake_text::{bytestr, unicode};
@@ -10,7 +11,7 @@ use serde::{Deserialize, Serialize};
 const PLAYER_MIN_PING: usize = 12;
 const PLAYER_MAX_PING: usize = 600;
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QuakeClient {
     pub id: u32,

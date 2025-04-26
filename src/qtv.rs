@@ -1,11 +1,12 @@
+//! QTV: Server for broadcasting
 use quake_serverinfo::Settings;
 use quake_text::bytestr::to_unicode;
 
-use crate::client::QuakeClient;
-use crate::server::{ClientSlots, QuakeServer};
+use crate::quake_client::QuakeClient;
+use crate::quake_server::{ClientSlots, QuakeServer};
 use crate::tokenize;
 
-use crate::hostport::Hostport;
+use crate::hostport::HostPort;
 use serde::Serializer;
 use serde::ser::SerializeStruct;
 
@@ -15,19 +16,27 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvServer {
-    pub settings: QtvSettings,
-    pub clients: Vec<QtvClient>,
+    settings: QtvSettings,
+    clients: Vec<QtvClient>,
 }
 
 impl From<&QuakeServer> for QtvServer {
     fn from(server: &QuakeServer) -> Self {
-        let settings = QtvSettings::from(&server.settings);
-        let clients = server.clients.iter().map(QtvClient::from).collect();
+        let settings = QtvSettings::from(server.settings());
+        let clients = server.clients().iter().map(QtvClient::from).collect();
         Self { settings, clients }
     }
 }
 
 impl QtvServer {
+    pub fn settings(&self) -> &QtvSettings {
+        &self.settings
+    }
+
+    pub fn clients(&self) -> &[QtvClient] {
+        &self.clients
+    }
+
     pub fn client_slots(&self) -> ClientSlots {
         let total = self.settings.maxclients;
         let used = self.clients.len() as u32;
@@ -38,9 +47,23 @@ impl QtvServer {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvSettings {
-    pub hostname: String,
-    pub maxclients: u32,
-    pub version: String,
+    hostname: String,
+    maxclients: u32,
+    version: String,
+}
+
+impl QtvSettings {
+    pub fn hostname(&self) -> &str {
+        &self.hostname
+    }
+
+    pub fn maxclients(&self) -> u32 {
+        self.maxclients
+    }
+
+    pub fn version(&self) -> &str {
+        &self.version
+    }
 }
 
 impl From<&Settings> for QtvSettings {
@@ -56,9 +79,23 @@ impl From<&Settings> for QtvSettings {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvClient {
-    pub id: u32,
-    pub time: u32,
-    pub name: String,
+    id: u32,
+    time: u32,
+    name: String,
+}
+
+impl QtvClient {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn time(&self) -> u32 {
+        self.time
+    }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
 }
 
 impl From<&QuakeClient> for QtvClient {
@@ -74,15 +111,50 @@ impl From<&QuakeClient> for QtvClient {
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Deserialize))]
 pub struct QtvStream {
-    pub id: u32,
-    pub name: String,
-    pub number: u32,
-    pub address: Hostport,
-    pub client_count: u32,
-    pub client_names: Vec<String>,
+    id: u32,
+    name: String,
+    number: u32,
+    address: HostPort,
+    client_count: u32,
+    client_names: Vec<String>,
 }
 
 impl QtvStream {
+    pub fn with_client_names(&self, client_names: &[String]) -> Self {
+        Self {
+            id: self.id,
+            name: self.name.clone(),
+            number: self.number,
+            address: self.address.clone(),
+            client_count: self.client_count,
+            client_names: client_names.to_vec(),
+        }
+    }
+
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn number(&self) -> u32 {
+        self.number
+    }
+
+    pub fn address(&self) -> &HostPort {
+        &self.address
+    }
+
+    pub fn client_count(&self) -> u32 {
+        self.client_count
+    }
+
+    pub fn client_names(&self) -> &[String] {
+        &self.client_names
+    }
+
     pub fn url(&self) -> String {
         format!("{}@{}", self.number, self.address)
     }
@@ -104,7 +176,7 @@ impl TryFrom<&[u8]> for QtvStream {
             None => (0, url.clone()),
         };
         let client_count: u32 = parts[4].parse()?;
-        let address = Hostport::try_from(address.as_str())?;
+        let address = HostPort::try_from(address.as_str())?;
 
         Ok(Self {
             id,
@@ -154,16 +226,14 @@ mod tests {
     }
 
     #[test]
-    fn test_qtvstream_methods() {
+    fn test_qtvstream_methods() -> Result<()> {
         let stream = QtvStream {
             number: 2,
-            address: Hostport {
-                host: "dm6.uk".to_string(),
-                port: 28000,
-            },
+            address: HostPort::new("dm6.uk".to_string(), 28000)?,
             ..Default::default()
         };
         assert_eq!(stream.url(), "2@dm6.uk:28000".to_string());
+        Ok(())
     }
 
     #[test]
@@ -174,10 +244,7 @@ mod tests {
                 id: 1,
                 name: "dm6.uk Qtv (7)".to_string(),
                 number: 7,
-                address: Hostport {
-                    host: "dm6.uk".to_string(),
-                    port: 28000,
-                },
+                address: HostPort::new("dm6.uk".to_string(), 28000)?,
                 client_count: 4,
                 client_names: vec![],
             }
@@ -189,10 +256,7 @@ mod tests {
     fn test_qtvstream_serialize() -> Result<()> {
         let server = QtvStream {
             number: 7,
-            address: Hostport {
-                host: "dm6.uk".to_string(),
-                port: 28000,
-            },
+            address: HostPort::new("dm6.uk".to_string(), 28000)?,
             ..Default::default()
         };
         assert!(serde_json::to_string(&server)?.contains(r#""url":"7@dm6.uk:28000""#));

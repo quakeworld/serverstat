@@ -1,10 +1,14 @@
 use crate::tokenize::tokenize;
-use anyhow::{Result, anyhow as e};
+use anyhow::Result;
 use quake_text::bytestr;
 use std::time::Duration;
-use tinyudp;
+use thiserror::Error;
 
-pub async fn qtvusers(address: &str, timeout: Duration) -> Result<QtvusersResponse> {
+/// Sends a `qtvusers` request to the specified address and returns the response.
+pub async fn qtvusers(
+    address: &str,
+    timeout: Duration,
+) -> Result<QtvusersResponse, QtvusersResponseError> {
     // https://github.com/QW-Group/mvdsv/blob/master/src/sv_demo_qtv.c#L1379
     let bytes = {
         let message = b"\xff\xff\xff\xffqtvusers".to_vec();
@@ -18,29 +22,45 @@ pub async fn qtvusers(address: &str, timeout: Duration) -> Result<QtvusersRespon
     QtvusersResponse::try_from(bytes.as_slice())
 }
 
-#[derive(Debug, Default, Eq, PartialEq)]
+/// Parses the response from a `qtvusers` request.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct QtvusersResponse {
-    pub stream_id: usize,
-    pub client_names: Vec<String>,
+    /// The stream ID of the server.
+    stream_id: usize,
+
+    /// The names of the clients connected to the server.
+    client_names: Vec<String>,
+}
+
+impl QtvusersResponse {
+    #[allow(dead_code)]
+    pub fn stream_id(&self) -> usize {
+        self.stream_id
+    }
+
+    pub fn client_names(&self) -> &[String] {
+        &self.client_names
+    }
 }
 
 impl TryFrom<&[u8]> for QtvusersResponse {
-    type Error = anyhow::Error;
+    type Error = QtvusersResponseError;
 
-    fn try_from(bytes: &[u8]) -> Result<Self> {
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
         // validate header
         let header = b"\xff\xff\xff\xffnqtvusers ".to_vec();
 
         if !bytes.starts_with(&header) {
-            return Err(e!("Invalid response header"));
+            return Err(QtvusersResponseError::InvalidHeader);
         }
 
         // extract body
         let body = {
-            let end_pos = bytes
-                .iter()
-                .position(|&b| b == b'\n')
-                .ok_or(e!("Invalid response body"))?;
+            let Some(end_pos) = bytes.iter().position(|&b| b == b'\n') else {
+                return Err(QtvusersResponseError::InvalidBody(
+                    "No newline found".to_string(),
+                ));
+            };
             &bytes[header.len()..end_pos]
         };
 
@@ -56,6 +76,21 @@ impl TryFrom<&[u8]> for QtvusersResponse {
     }
 }
 
+#[derive(Debug, Error)]
+pub enum QtvusersResponseError {
+    #[error("UDP error")]
+    UdpError(#[from] tinyudp::TinyudpError),
+
+    #[error("Invalid response header")]
+    InvalidHeader,
+
+    #[error("Invalid response body")]
+    InvalidBody(String),
+
+    #[error("Invalid stream id")]
+    InvalidStreamId(#[from] std::num::ParseIntError),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -66,23 +101,18 @@ mod tests {
     fn test_try_from() -> Result<()> {
         {
             let bytes = b"\xff\xff\xff\xffnqtvusers 12 \"[streambot]\" \"XantoM\"\n".as_slice();
+            let res = QtvusersResponse::try_from(bytes)?;
+            assert_eq!(res.stream_id(), 12);
             assert_eq!(
-                QtvusersResponse::try_from(bytes)?,
-                QtvusersResponse {
-                    stream_id: 12,
-                    client_names: vec!["[streambot]".to_string(), "XantoM".to_string()]
-                }
+                res.client_names(),
+                &["[streambot]".to_string(), "XantoM".to_string()]
             );
         }
         {
             let bytes = b"\xff\xff\xff\xffnqtvusers 1\n".as_slice();
-            assert_eq!(
-                QtvusersResponse::try_from(bytes)?,
-                QtvusersResponse {
-                    stream_id: 1,
-                    client_names: vec![]
-                }
-            );
+            let res = QtvusersResponse::try_from(bytes)?;
+            assert_eq!(res.stream_id(), 1);
+            assert!(res.client_names().is_empty());
         }
 
         Ok(())

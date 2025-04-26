@@ -1,8 +1,9 @@
+//! Game server (clients can connect as player or spectator)
 use crate::qtv::QtvStream;
-use crate::server::QuakeServer;
+use crate::quake_server::QuakeServer;
 use crate::team;
 use crate::team::Team;
-use crate::{client::QuakeClient, server::ClientSlots};
+use crate::{quake_client::QuakeClient, quake_server::ClientSlots};
 pub use quake_serverinfo::Settings;
 use quake_text::unicode;
 
@@ -12,19 +13,41 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GameServer {
-    pub settings: Settings,
-    pub teams: Vec<Team>,
-    pub players: Vec<Player>,
-    pub spectators: Vec<Spectator>,
-    pub qtv_stream: Option<QtvStream>,
+    settings: Settings,
+    teams: Vec<Team>,
+    players: Vec<Player>,
+    spectators: Vec<Spectator>,
+    qtv_stream: Option<QtvStream>,
+}
+
+impl GameServer {
+    pub fn settings(&self) -> &Settings {
+        &self.settings
+    }
+
+    pub fn teams(&self) -> &[Team] {
+        &self.teams
+    }
+
+    pub fn players(&self) -> &[Player] {
+        &self.players
+    }
+
+    pub fn spectators(&self) -> &[Spectator] {
+        &self.spectators
+    }
+
+    pub fn qtv_stream(&self) -> Option<&QtvStream> {
+        self.qtv_stream.as_ref()
+    }
 }
 
 impl From<&QuakeServer> for GameServer {
     fn from(server: &QuakeServer) -> Self {
-        let mut clients = server.clients.clone();
+        let mut clients: Vec<QuakeClient> = server.clients().into();
         clients.sort();
 
-        let is_teamplay = server.settings.teamplay.is_some_and(|tp| tp > 0);
+        let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
 
         let mut players: Vec<Player> = clients
             .iter()
@@ -48,11 +71,11 @@ impl From<&QuakeServer> for GameServer {
         };
 
         Self {
-            settings: server.settings.clone(),
+            settings: server.settings().clone(),
             teams,
             players,
             spectators,
-            qtv_stream: server.qtv_stream.clone(),
+            qtv_stream: server.qtv_stream().cloned(),
         }
     }
 }
@@ -139,13 +162,9 @@ mod tests {
     async fn test_from_gameserver() -> Result<()> {
         let server =
             QuakeServer::try_from_address("quake.se:28501", Duration::from_secs_f32(0.5)).await?;
-        assert!(
-            GameServer::from(&server)
-                .settings
-                .hostname
-                .unwrap()
-                .starts_with("QUAKE.SE KTX:28501"),
-        );
+        let gameserver = GameServer::from(&server);
+        let hostname = gameserver.settings().clone().hostname.unwrap_or_default();
+        assert!(hostname.starts_with("QUAKE.SE KTX:28501"),);
         Ok(())
     }
 

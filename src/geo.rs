@@ -1,3 +1,7 @@
+//! # Geo Module
+//! This module provides functionality for working with geographical data,
+//! including country, city, region, and coordinates. It is used to enrich
+//! server information with location-based details.
 use anyhow::Error;
 use phf::phf_map;
 use quake_serverinfo::Settings;
@@ -5,31 +9,45 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
     pub country_code: Option<String>,
     pub country_name: Option<String>,
     pub city: Option<String>,
     pub region: Option<String>,
-    pub coords: Option<Coordinates>,
+    pub coords: Option<Coords>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
-pub struct Coordinates {
-    pub lat: f64,
-    pub lng: f64,
+pub struct Coords {
+    lat: f64,
+    lng: f64,
 }
 
-impl Eq for Coordinates {
+impl Coords {
+    pub fn new(lat: f64, lng: f64) -> Self {
+        Self { lat, lng }
+    }
+
+    pub fn lat(&self) -> f64 {
+        self.lat
+    }
+
+    pub fn lng(&self) -> f64 {
+        self.lng
+    }
+}
+
+impl Eq for Coords {
     fn assert_receiver_is_total_eq(&self) {
         // This is a no-op, but it allows us to implement `Eq` for `Coordinates`.
         // The default implementation of `PartialEq` is sufficient for our needs.
     }
 }
 
-impl TryFrom<&str> for Coordinates {
+impl TryFrom<&str> for Coords {
     type Error = Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -58,7 +76,7 @@ impl From<&Settings> for GeoInfo {
             .unwrap_or_default();
 
         let coords = match &settings.coords {
-            Some(coords) => Coordinates::try_from(coords.as_str()).ok(),
+            Some(coords) => Coords::try_from(coords.as_str()).ok(),
             None => None,
         };
 
@@ -342,13 +360,13 @@ pub mod tests {
     #[test]
     fn test_coordinates() -> Result<()> {
         assert_eq!(
-            Coordinates::try_from("40.7128,-74.0060")?,
-            Coordinates {
+            Coords::try_from("40.7128,-74.0060")?,
+            Coords {
                 lat: 40.7128,
                 lng: -74.0060,
             }
         );
-        assert!(Coordinates::try_from("invalid_coords").is_err());
+        assert!(Coords::try_from("invalid_coords").is_err());
         Ok(())
     }
 
@@ -368,7 +386,7 @@ pub mod tests {
                 country_name: Some("United States".to_string()),
                 city: Some("New York".to_string()),
                 region: Some("North America".to_string()),
-                coords: Some(Coordinates {
+                coords: Some(Coords {
                     lat: 40.7128,
                     lng: -74.0060,
                 }),

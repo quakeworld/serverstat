@@ -23,6 +23,7 @@ quake_text = "0.3.0"
 serde = { optional = true, version = "1.0.219", features = ["derive"] }
 serde_json = { optional = true, version = "1.0.140" }
 tinyudp = "0.5.1"
+thiserror = "2.0.11"
 tokio = { version = "1.44.1", features = ["macros"] }
 
 [dev-dependencies]

@@ -1,4 +1,5 @@
-use crate::gameserver::Player;
+//! Team: a collection of Players
+use crate::game_server::Player;
 use quake_text::unicode;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -6,7 +7,7 @@ use std::collections::HashMap;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Team {
     pub name: String,
@@ -16,7 +17,7 @@ pub struct Team {
     pub bottom_color: u8,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 #[allow(dead_code)]
 struct TempTeam {
     name: String,

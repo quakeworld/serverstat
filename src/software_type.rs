@@ -1,9 +1,10 @@
+//! Software types (FortressOne, FTE, MVDSV, QTV, QWFWD)
 use std::fmt::Display;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "json",
     derive(Serialize, Deserialize),
