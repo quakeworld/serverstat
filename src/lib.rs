@@ -14,7 +14,7 @@ pub mod qwfwd;
 pub mod server;
 
 pub use common::client_slots::ClientSlots;
-pub use common::geo::{Coords, GeoInfo};
+pub use common::geo::{Coords, GeoInfo, GeoInfoBuilder};
 pub use common::server_type::ServerType;
 pub use common::software_type::SoftwareType;
 

@@ -43,6 +43,63 @@ impl GeoInfo {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct GeoInfoBuilder {
+    country_code: Option<String>,
+    country_name: Option<String>,
+    city: Option<String>,
+    region: Option<String>,
+    coords: Option<Coords>,
+}
+
+#[allow(dead_code)]
+impl GeoInfoBuilder {
+    pub fn new() -> Self {
+        Self {
+            country_code: None,
+            country_name: None,
+            city: None,
+            region: None,
+            coords: None,
+        }
+    }
+
+    pub fn country_code(mut self, code: String) -> Self {
+        self.country_code = Some(code);
+        self
+    }
+
+    pub fn country_name(mut self, name: String) -> Self {
+        self.country_name = Some(name);
+        self
+    }
+
+    pub fn city(mut self, city: String) -> Self {
+        self.city = Some(city);
+        self
+    }
+
+    pub fn region(mut self, region: String) -> Self {
+        self.region = Some(region);
+        self
+    }
+
+    pub fn coords(mut self, coords: Coords) -> Self {
+        self.coords = Some(coords);
+        self
+    }
+
+    pub fn build(self) -> GeoInfo {
+        GeoInfo {
+            country_code: self.country_code,
+            country_name: self.country_name,
+            city: self.city,
+            region: self.region,
+            coords: self.coords,
+        }
+    }
+}
+
 /// Coordinates (latitude and longitude)
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
