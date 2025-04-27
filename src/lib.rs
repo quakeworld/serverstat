@@ -1,17 +1,20 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+
 //! # serverstat
 //! Get information from QuakeWorld servers
 
-// Private modules - implementation details
+// internal modules
+pub(crate) mod util;
+
+// public api
 pub mod game_server;
-pub mod geo;
-pub(crate) mod net_extra;
+pub mod generic_server;
 pub mod qtv;
-pub mod quake_client;
-pub mod quake_server;
 pub mod qwfwd;
-pub mod server_type;
-pub mod software_type;
-pub(crate) mod svc_qtvusers;
-pub(crate) mod svc_status;
-pub mod team;
-pub(crate) mod tokenize;
+
+pub use crate::generic_server::client_slots::ClientSlots;
+pub use crate::generic_server::geo::{Coords, GeoInfo};
+pub use crate::generic_server::server_type::ServerType;
+pub use crate::generic_server::software_type::SoftwareType;
+
+pub use hostport::HostPort;

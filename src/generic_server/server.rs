@@ -1,38 +1,35 @@
-//! Generic QuakeWorld server
-use anyhow::Result;
+use super::client::QuakeClient;
+use super::geo::GeoInfo;
+use super::server_type::ServerType;
+use super::software_type::SoftwareType;
+use super::stream::QtvStream;
+use super::svc_status;
+use crate::game_server::server::GameServer;
+use crate::qtv::server::QtvServer;
+use crate::qtv::svc_qtvusers;
+use crate::qwfwd::server::QwfwdServer;
+use crate::util::net_extra;
+use hostport::HostPort;
+pub use quake_serverinfo::Settings;
 use std::time::Duration;
 
-pub use quake_serverinfo::Settings;
-
-use crate::geo::GeoInfo;
-use crate::qtv::QtvStream;
-use crate::quake_client::QuakeClient;
-use crate::server_type::ServerType;
-use crate::software_type::SoftwareType;
-use crate::svc_status;
-use crate::{net_extra, svc_qtvusers};
-use hostport::HostPort;
-
 #[cfg(feature = "json")]
-use {
-    crate::game_server::GameServer,
-    crate::qtv::QtvServer,
-    crate::qwfwd::QwfwdServer,
-    serde::{Serialize, Serializer, ser::SerializeStruct},
-};
+use serde::{Serialize, Serializer, ser::SerializeStruct};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Generic Quake server with common functionality
+#[derive(Debug, Clone, PartialEq)]
 pub struct QuakeServer {
-    server_type: ServerType,
-    software_type: SoftwareType,
-    address: HostPort,
-    ip: String,
-    settings: Settings,
-    clients: Vec<QuakeClient>,
-    qtv_stream: Option<QtvStream>,
-    geo: GeoInfo,
+    pub(crate) server_type: ServerType,
+    pub(crate) software_type: SoftwareType,
+    pub(crate) address: HostPort,
+    pub(crate) ip: String,
+    pub(crate) settings: Settings,
+    pub(crate) clients: Vec<QuakeClient>,
+    pub(crate) qtv_stream: Option<QtvStream>,
+    pub(crate) geo: GeoInfo,
 }
 
+#[allow(dead_code)]
 impl QuakeServer {
     pub fn server_type(&self) -> ServerType {
         self.server_type.clone()
@@ -65,9 +62,9 @@ impl QuakeServer {
         &self.geo
     }
 
-    pub async fn try_from_address(address: &str, timeout: Duration) -> Result<Self> {
+    pub async fn try_from_address(address: &str, timeout: Duration) -> anyhow::Result<Self> {
         let res = svc_status::status_119(address, timeout).await?;
-        let ip = net_extra::address_to_ip(address).unwrap_or_default();
+        let ip = net_extra::resolve_address_to_ip(address).unwrap_or_default();
 
         let qtv_stream = match res.qtv_stream() {
             Some(qtv_stream) => {
@@ -102,36 +99,9 @@ impl QuakeServer {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "json", derive(serde::Serialize))]
-pub struct ClientSlots {
-    total: u32,
-    used: u32,
-    free: u32,
-}
-
-impl ClientSlots {
-    pub fn new(used: u32, total: u32) -> Self {
-        let free = total.saturating_sub(used);
-        ClientSlots { total, used, free }
-    }
-
-    pub fn total(&self) -> u32 {
-        self.total
-    }
-
-    pub fn used(&self) -> u32 {
-        self.used
-    }
-
-    pub fn free(&self) -> u32 {
-        self.free
-    }
-}
-
 #[cfg(feature = "json")]
 impl Serialize for QuakeServer {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> anyhow::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -151,7 +121,7 @@ impl Serialize for QuakeServer {
         state.serialize_field("server_type", &self.server_type)?;
         state.serialize_field("software_type", &self.software_type)?;
         state.serialize_field("host", &self.address.host())?;
-        state.serialize_field("ip", &self.ip)?;
+        state.serialize_field("ip", &self.ip())?;
         state.serialize_field("port", &self.address.port())?;
         state.serialize_field("address", &self.address)?;
         state.serialize_field("geo", &self.geo)?;
@@ -181,43 +151,48 @@ impl Serialize for QuakeServer {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
-    use crate::geo::Coords;
+    use crate::generic_server::geo::Coords;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn test_try_from_address() -> Result<()> {
+        // invalid address
         assert!(
             QuakeServer::try_from_address("foo.bar:666", Duration::from_millis(50))
                 .await
                 .is_err()
         );
 
-        let timeout = Duration::from_secs_f32(0.5);
-        let server = QuakeServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
+        // valid address
+        {
+            let timeout = Duration::from_secs_f32(0.5);
+            let server = QuakeServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
 
-        assert!(
-            server
-                .clone()
-                .settings
-                .hostname
-                .unwrap()
-                .starts_with("berlin2 KTX Server")
-        );
-        assert_eq!(server.address, HostPort::new("berlin2.qwsv.net", 27500)?);
+            assert_eq!(server.server_type(), ServerType::GameServer);
+            assert_eq!(server.software_type(), SoftwareType::Mvdsv);
+            assert_eq!(server.address(), &HostPort::new("berlin2.qwsv.net", 27500)?);
+            assert!(!server.ip().is_empty());
 
-        assert_eq!(
-            server.geo,
-            GeoInfo {
-                country_code: Some("DE".to_string()),
-                city: Some("Berlin".to_string()),
-                region: Some("Europe".to_string()),
-                country_name: Some("Germany".to_string()),
-                coords: Some(Coords::new(52.5200, 13.4050)),
-            }
-        );
+            let settings = server.settings().clone();
+            assert!(settings.hostname.unwrap().starts_with("berlin2 KTX Server"));
+
+            assert!(server.qtv_stream().is_some());
+
+            assert_eq!(
+                server.geo(),
+                &GeoInfo {
+                    country_code: Some("DE".to_string()),
+                    city: Some("Berlin".to_string()),
+                    region: Some("Europe".to_string()),
+                    country_name: Some("Germany".to_string()),
+                    coords: Some(Coords::new(52.5200, 13.4050)),
+                }
+            );
+        }
 
         Ok(())
     }

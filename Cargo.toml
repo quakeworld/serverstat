@@ -34,3 +34,6 @@ pretty_assertions = "1.4.1"
 [features]
 ci = []
 json = ["dep:serde", "dep:serde_json", "quake_serverinfo/json"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage,coverage_nightly)'] }

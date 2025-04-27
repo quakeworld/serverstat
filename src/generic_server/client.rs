@@ -1,8 +1,7 @@
 //! Generic client connected to a server (client, player, spectator)
-use crate::tokenize;
+use crate::util::tokenize;
 use anyhow::Result;
 use quake_text::{bytestr, unicode};
-
 use std::cmp::Ordering;
 
 #[cfg(feature = "json")]
@@ -14,18 +13,18 @@ const PLAYER_MAX_PING: usize = 600;
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QuakeClient {
-    pub id: u32,
-    pub name: String,
-    pub team: String,
-    pub frags: i32,
-    pub ping: u32,
-    pub time: u32,
-    pub top_color: u8,
-    pub bottom_color: u8,
-    pub skin: String,
-    pub auth_cc: String,
-    pub is_spectator: bool,
-    pub is_bot: bool,
+    pub(crate) id: u32,
+    pub(crate) name: String,
+    pub(crate) team: String,
+    pub(crate) frags: i32,
+    pub(crate) ping: u32,
+    pub(crate) time: u32,
+    pub(crate) top_color: u8,
+    pub(crate) bottom_color: u8,
+    pub(crate) skin: String,
+    pub(crate) auth_cc: String,
+    pub(crate) is_spectator: bool,
+    pub(crate) is_bot: bool,
 }
 
 impl TryFrom<&[u8]> for QuakeClient {
@@ -86,23 +85,81 @@ impl Ord for QuakeClient {
     }
 }
 
+impl QuakeClient {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn team(&self) -> &str {
+        &self.team
+    }
+
+    pub fn frags(&self) -> i32 {
+        self.frags
+    }
+
+    pub fn ping(&self) -> u32 {
+        self.ping
+    }
+
+    pub fn time(&self) -> u32 {
+        self.time
+    }
+
+    pub fn top_color(&self) -> u8 {
+        self.top_color
+    }
+
+    pub fn bottom_color(&self) -> u8 {
+        self.bottom_color
+    }
+
+    pub fn skin(&self) -> &str {
+        &self.skin
+    }
+
+    pub fn auth_cc(&self) -> &str {
+        &self.auth_cc
+    }
+
+    pub fn is_spectator(&self) -> bool {
+        self.is_spectator
+    }
+
+    pub fn is_bot(&self) -> bool {
+        self.is_bot
+    }
+}
+
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_try_from_bytes() -> Result<()> {
+        // invalid input
+        assert!(QuakeClient::try_from(br#"a 0 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid id
+        assert!(QuakeClient::try_from(br#"0 a 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid frags
+        assert!(QuakeClient::try_from(br#"0 0 a 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid time
+        assert!(QuakeClient::try_from(br#"0 0 0 a "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid ping
+        assert!(QuakeClient::try_from(br#"0 0 0 0 "name" "" a 4 "sk" """#.as_slice()).is_err()); // invalid top_color
+        assert!(QuakeClient::try_from(br#"0 0 0 0 "name" "" 4 a "sk" """#.as_slice()).is_err()); // invalid bottom_color
+
         // player
         {
-            let bytes = br#"63 43 41 25 "ToT_Oddjob" "" 4 4 "red" """#;
+            let bytes = br#"63 43 41 25 "Player" "" 4 4 "red" """#;
             let client = QuakeClient::try_from(bytes.as_slice())?;
-
             assert_eq!(
                 client,
                 QuakeClient {
                     id: 63,
-                    name: "ToT_Oddjob".to_string(),
+                    name: "Player".to_string(),
                     team: "red".to_string(),
                     frags: 43,
                     ping: 25,
@@ -115,13 +172,13 @@ mod tests {
                     is_bot: false,
                 }
             );
+            assert!(!client.is_spectator())
         }
 
         // spectator
         {
-            let bytes = br#"74 -9999 3 -33 "\s\ razor" "8" 3 11 "sr" """#;
-            let client = QuakeClient::try_from(bytes.as_slice())?;
-
+            let bytes = br#"74 -9999 3 -33 "\s\ razor" "8" 3 11 "sr" """#.as_slice();
+            let client = QuakeClient::try_from(bytes)?;
             assert_eq!(
                 client,
                 QuakeClient {
@@ -138,7 +195,8 @@ mod tests {
                     is_spectator: true,
                     is_bot: false,
                 }
-            )
+            );
+            assert!(client.is_spectator())
         }
 
         // qtv/qwfwd client

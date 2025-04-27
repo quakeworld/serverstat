@@ -1,9 +1,9 @@
-//! Server types (game servers, proxy servers, QTV servers)
 use std::fmt::Display;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
+/// Server types (game servers, proxy servers, QTV servers)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "json",
@@ -49,6 +49,7 @@ impl ServerType {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
 

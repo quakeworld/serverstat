@@ -23,6 +23,7 @@ pub fn tokenize(value: &str) -> Vec<String> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;

@@ -1,4 +1,4 @@
-//! # Geo Module
+//! # Geo Info
 //! This module provides functionality for working with geographical data,
 //! including country, city, region, and coordinates. It is used to enrich
 //! server information with location-based details.
@@ -9,14 +9,37 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
-    pub country_code: Option<String>,
-    pub country_name: Option<String>,
-    pub city: Option<String>,
-    pub region: Option<String>,
-    pub coords: Option<Coords>,
+    pub(crate) country_code: Option<String>,
+    pub(crate) country_name: Option<String>,
+    pub(crate) city: Option<String>,
+    pub(crate) region: Option<String>,
+    pub(crate) coords: Option<Coords>,
+}
+
+#[allow(dead_code)]
+impl GeoInfo {
+    pub fn country_code(&self) -> &Option<String> {
+        &self.country_code
+    }
+
+    pub fn country_name(&self) -> &Option<String> {
+        &self.country_name
+    }
+
+    pub fn city(&self) -> &Option<String> {
+        &self.city
+    }
+
+    pub fn region(&self) -> &Option<String> {
+        &self.region
+    }
+
+    pub fn coords(&self) -> &Option<Coords> {
+        &self.coords
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -26,6 +49,7 @@ pub struct Coords {
     lng: f64,
 }
 
+#[allow(dead_code)]
 impl Coords {
     pub fn new(lat: f64, lng: f64) -> Self {
         Self { lat, lng }
@@ -37,13 +61,6 @@ impl Coords {
 
     pub fn lng(&self) -> f64 {
         self.lng
-    }
-}
-
-impl Eq for Coords {
-    fn assert_receiver_is_total_eq(&self) {
-        // This is a no-op, but it allows us to implement `Eq` for `Coordinates`.
-        // The default implementation of `PartialEq` is sufficient for our needs.
     }
 }
 
@@ -351,6 +368,7 @@ static COUNTRY_INFO: phf::Map<&'static str, (&'static str, &'static str)> = phf_
 };
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 pub mod tests {
     use super::*;
     use anyhow::Result;
@@ -359,38 +377,31 @@ pub mod tests {
 
     #[test]
     fn test_coordinates() -> Result<()> {
-        assert_eq!(
-            Coords::try_from("40.7128,-74.0060")?,
-            Coords {
-                lat: 40.7128,
-                lng: -74.0060,
-            }
-        );
+        // invalid
         assert!(Coords::try_from("invalid_coords").is_err());
+
+        // valid
+        let coords = Coords::try_from("40.7128,-74.0060")?;
+        assert_eq!(coords.lat(), 40.7128);
+        assert_eq!(coords.lng(), -74.0060);
+
+        assert_eq!(Coords::new(40.7128, -74.0060), coords);
+
         Ok(())
     }
 
     #[test]
     fn test_geo_info() {
-        let settings = Settings {
+        let geo = GeoInfo::from(&Settings {
             countrycode: Some("US".to_string()),
             city: Some("New York".to_string()),
             coords: Some("40.7128,-74.0060".to_string()),
             ..Default::default()
-        };
-
-        assert_eq!(
-            GeoInfo::from(&settings),
-            GeoInfo {
-                country_code: Some("US".to_string()),
-                country_name: Some("United States".to_string()),
-                city: Some("New York".to_string()),
-                region: Some("North America".to_string()),
-                coords: Some(Coords {
-                    lat: 40.7128,
-                    lng: -74.0060,
-                }),
-            }
-        );
+        });
+        assert_eq!(geo.coords(), &Some(Coords::new(40.7128, -74.0060)));
+        assert_eq!(geo.country_code(), &Some("US".to_string()));
+        assert_eq!(geo.country_name(), &Some("United States".to_string()));
+        assert_eq!(geo.city(), &Some("New York".to_string()));
+        assert_eq!(geo.region(), &Some("North America".to_string()));
     }
 }

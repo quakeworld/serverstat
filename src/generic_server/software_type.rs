@@ -1,9 +1,9 @@
-//! Software types (FortressOne, FTE, MVDSV, QTV, QWFWD)
 use std::fmt::Display;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
+/// Software types (FortressOne, FTE, MVDSV, QTV, QWFWD)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "json",
@@ -49,6 +49,7 @@ impl SoftwareType {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
 

@@ -1,5 +1,5 @@
 //! Team: a collection of Players
-use crate::game_server::Player;
+use crate::game_server::player::Player;
 use quake_text::unicode;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -10,11 +10,34 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Team {
-    pub name: String,
-    pub frags: i32,
-    pub ping: u32,
-    pub top_color: u8,
-    pub bottom_color: u8,
+    name: String,
+    frags: i32,
+    ping: u32,
+    top_color: u8,
+    bottom_color: u8,
+}
+
+#[allow(dead_code)]
+impl Team {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn frags(&self) -> i32 {
+        self.frags
+    }
+
+    pub fn ping(&self) -> u32 {
+        self.ping
+    }
+
+    pub fn top_color(&self) -> u8 {
+        self.top_color
+    }
+
+    pub fn bottom_color(&self) -> u8 {
+        self.bottom_color
+    }
 }
 
 #[derive(Debug, Default)]
@@ -27,16 +50,17 @@ struct TempTeam {
     colors: Vec<(u8, u8)>,
 }
 
-pub fn from_players(players: &[Player]) -> Vec<Team> {
+pub fn players_to_teams(players: &[Player]) -> Vec<Team> {
     let mut temp: HashMap<String, TempTeam> = HashMap::new();
 
     for player in players {
-        let team = temp.entry(player.team.clone()).or_default();
-        team.name = player.team.clone();
-        team.frags += player.frags;
-        team.ping_sum += player.ping as f32;
+        let team = temp.entry(player.team().to_string()).or_default();
+        team.name = player.team().to_string();
+        team.frags += player.frags();
+        team.ping_sum += player.ping() as f32;
         team.player_count += 1;
-        team.colors.push((player.top_color, player.bottom_color));
+        team.colors
+            .push((player.top_color(), player.bottom_color()));
     }
 
     let mut teams: Vec<Team> = Vec::new();
@@ -94,13 +118,14 @@ fn get_majority_color(colors: &[(u8, u8)]) -> (u8, u8) {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_from_clients() -> Result<()> {
+    fn test_players_to_teams() -> Result<()> {
         let clients = vec![
             Player {
                 team: "red".to_string(),
@@ -136,7 +161,7 @@ mod tests {
             },
         ];
 
-        let teams = from_players(&clients);
+        let teams = players_to_teams(&clients);
         assert_eq!(teams.len(), 2);
 
         assert_eq!(
@@ -150,17 +175,11 @@ mod tests {
             }
         );
 
-        assert_eq!(
-            teams[1],
-            Team {
-                name: "red".to_string(),
-                frags: 17,
-                ping: 21,
-                top_color: 4,
-                bottom_color: 4,
-            }
-        );
-
+        assert_eq!(teams[1].name(), "red");
+        assert_eq!(teams[1].frags(), 17);
+        assert_eq!(teams[1].ping(), 21);
+        assert_eq!(teams[1].top_color(), 4);
+        assert_eq!(teams[1].bottom_color(), 4);
         Ok(())
     }
 

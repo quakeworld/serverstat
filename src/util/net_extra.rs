@@ -1,6 +1,6 @@
 use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs};
 
-pub fn address_to_ip(address: &str) -> Option<String> {
+pub fn resolve_address_to_ip(address: &str) -> Option<String> {
     let host = address.split_once(':').map_or(address, |(h, _)| h);
 
     if host.parse::<Ipv4Addr>().is_ok() {
@@ -21,18 +21,26 @@ pub fn address_to_ip(address: &str) -> Option<String> {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 pub mod tests {
     use super::*;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
-    async fn test_address_to_ip() -> Result<()> {
-        assert!(address_to_ip("INVALID_ADDRESS").is_none());
-        assert_eq!(address_to_ip("1.2.3.4"), Some("1.2.3.4".to_string()));
+    async fn test_resolve_address_to_ip() -> Result<()> {
+        assert!(resolve_address_to_ip("INVALID_ADDRESS").is_none());
+        assert_eq!(
+            resolve_address_to_ip("0:0:0:0:0:ffff:c0a8:0001:28000"),
+            None
+        );
+        assert_eq!(
+            resolve_address_to_ip("1.2.3.4:28000"),
+            Some("1.2.3.4".to_string())
+        );
         assert!(
             [Some("1.1.1.1".to_string()), Some("1.0.0.1".to_string())]
-                .contains(&address_to_ip("one.one.one.one:26000"))
+                .contains(&resolve_address_to_ip("one.one.one.one:26000"))
         );
         Ok(())
     }

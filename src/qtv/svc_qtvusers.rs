@@ -1,4 +1,4 @@
-use crate::tokenize::tokenize;
+use crate::util::tokenize::tokenize;
 use anyhow::Result;
 use quake_text::bytestr;
 use std::time::Duration;
@@ -16,7 +16,9 @@ pub async fn qtvusers(
             timeout,
             buffer_size: 4 * 1024, // 4 kb
         };
-        tinyudp::send_and_receive(address, &message, options).await?
+        tinyudp::send_and_receive(address, &message, options)
+            .await
+            .map_err(|e| QtvusersResponseError::UdpError(e.to_string()))?
     };
 
     QtvusersResponse::try_from(bytes.as_slice())
@@ -32,8 +34,8 @@ pub struct QtvusersResponse {
     client_names: Vec<String>,
 }
 
+#[allow(dead_code)]
 impl QtvusersResponse {
-    #[allow(dead_code)]
     pub fn stream_id(&self) -> usize {
         self.stream_id
     }
@@ -76,10 +78,10 @@ impl TryFrom<&[u8]> for QtvusersResponse {
     }
 }
 
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum QtvusersResponseError {
-    #[error("UDP error")]
-    UdpError(#[from] tinyudp::TinyudpError),
+    #[error("UDP error: {0}")]
+    UdpError(String),
 
     #[error("Invalid response header")]
     InvalidHeader,
@@ -92,13 +94,67 @@ pub enum QtvusersResponseError {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
+    #[tokio::test]
+    async fn test_qtvusers() -> Result<()> {
+        // invalid address
+        assert_eq!(
+            qtvusers("INVALID_ADDRESS", Duration::from_secs(1))
+                .await
+                .unwrap_err(),
+            QtvusersResponseError::UdpError(
+                "failed to send message: invalid socket address".to_string()
+            )
+        );
+
+        // timeout
+        assert_eq!(
+            qtvusers("quake.se:28000", Duration::default())
+                .await
+                .unwrap_err(),
+            QtvusersResponseError::UdpError(
+                "timeout reached while waiting for response".to_string()
+            )
+        );
+        Ok(())
+    }
+
     #[test]
     fn test_try_from() -> Result<()> {
+        // invalid header
+        assert_eq!(
+            QtvusersResponse::try_from(b"foo".as_slice()).unwrap_err(),
+            QtvusersResponseError::InvalidHeader
+        );
+
+        // invalid body
+        assert_eq!(
+            QtvusersResponse::try_from(b"\xff\xff\xff\xffnqtvusers ".as_slice()).unwrap_err(),
+            QtvusersResponseError::InvalidBody("No newline found".to_string())
+        );
+
+        // invalid stream id
+        assert_eq!(
+            QtvusersResponse::try_from(b"\xff\xff\xff\xffnqtvusers foo\n".as_slice())
+                .unwrap_err()
+                .to_string(),
+            "Invalid stream id".to_string()
+        );
+
+        // no users
+        {
+            let bytes = b"\xff\xff\xff\xffnqtvusers 1\n".as_slice();
+            let res = QtvusersResponse::try_from(bytes)?;
+            assert_eq!(res.stream_id(), 1);
+            assert!(res.client_names().is_empty());
+        }
+
+        // has users
         {
             let bytes = b"\xff\xff\xff\xffnqtvusers 12 \"[streambot]\" \"XantoM\"\n".as_slice();
             let res = QtvusersResponse::try_from(bytes)?;
@@ -107,12 +163,6 @@ mod tests {
                 res.client_names(),
                 &["[streambot]".to_string(), "XantoM".to_string()]
             );
-        }
-        {
-            let bytes = b"\xff\xff\xff\xffnqtvusers 1\n".as_slice();
-            let res = QtvusersResponse::try_from(bytes)?;
-            assert_eq!(res.stream_id(), 1);
-            assert!(res.client_names().is_empty());
         }
 
         Ok(())

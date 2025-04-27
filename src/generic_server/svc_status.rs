@@ -1,5 +1,5 @@
-use crate::qtv::QtvStream;
-use crate::quake_client::QuakeClient;
+use crate::generic_server::client::QuakeClient;
+use crate::generic_server::stream::QtvStream;
 use anyhow::Result;
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};
@@ -44,6 +44,7 @@ pub struct Status119Response {
     qtv_stream: Option<QtvStream>,
 }
 
+#[allow(dead_code)]
 impl Status119Response {
     pub fn settings(&self) -> &Settings {
         &self.settings
@@ -115,6 +116,7 @@ pub enum Status119ResponseError {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
     use anyhow::Result;
@@ -123,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_try_from() -> Result<()> {
-        // invalid
+        // invalid response header
         {
             let res = Status119Response::try_from([0].as_slice());
             assert_eq!(
@@ -131,6 +133,8 @@ mod tests {
                 "Invalid response header".to_string()
             );
         }
+
+        // invalid resposne body
         {
             let res = Status119Response::try_from([255, 255, 255, 255, 110, 0].as_slice());
             assert_eq!(
@@ -195,8 +199,11 @@ mod tests {
                 let qtv_stream = res.qtv_stream.unwrap_or_default();
                 assert_eq!(qtv_stream.id(), 1);
                 assert_eq!(qtv_stream.name(), "zasadzka Qtv (2)".to_string());
-                assert_eq!(qtv_stream.number(), 2);
-                assert_eq!(qtv_stream.address(), &HostPort::new("zasadzka.pl", 28000)?);
+                assert_eq!(qtv_stream.number(), Some(2));
+                assert_eq!(
+                    qtv_stream.address(),
+                    Some(&HostPort::new("zasadzka.pl", 28000)?)
+                );
                 assert_eq!(qtv_stream.client_count(), 2);
                 assert!(qtv_stream.client_names().is_empty());
 

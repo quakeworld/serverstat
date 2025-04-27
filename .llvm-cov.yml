@@ -1,0 +1,2 @@
+ignore-regex:
+  - "mod tests \\{"            # Ignore test modules

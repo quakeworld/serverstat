@@ -1,0 +1,174 @@
+//! Game server (clients can connect as player or spectator)
+use crate::game_server::{player::Player, spectator::Spectator, team, team::Team};
+use crate::generic_server::client::QuakeClient;
+use crate::generic_server::client_slots::ClientSlots;
+use crate::generic_server::geo::GeoInfo;
+use crate::generic_server::server::QuakeServer;
+use crate::generic_server::stream::QtvStream;
+use quake_serverinfo::Settings;
+use quake_text::unicode;
+
+#[cfg(feature = "json")]
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Default, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+pub struct GameServer {
+    settings: Settings,
+    teams: Vec<Team>,
+    players: Vec<Player>,
+    spectators: Vec<Spectator>,
+    qtv_stream: Option<QtvStream>,
+    geo: GeoInfo,
+}
+
+#[allow(dead_code)]
+impl GameServer {
+    pub fn settings(&self) -> &Settings {
+        &self.settings
+    }
+
+    pub fn teams(&self) -> &[Team] {
+        &self.teams
+    }
+
+    pub fn players(&self) -> &[Player] {
+        &self.players
+    }
+
+    pub fn spectators(&self) -> &[Spectator] {
+        &self.spectators
+    }
+
+    pub fn qtv_stream(&self) -> Option<&QtvStream> {
+        self.qtv_stream.as_ref()
+    }
+
+    pub fn geo(&self) -> &GeoInfo {
+        &self.geo
+    }
+
+    pub fn player_slots(&self) -> ClientSlots {
+        let used = self.players.len() as u32;
+        let total = self.settings.maxclients.map(|v| v as u32).unwrap_or(used);
+        ClientSlots::new(used, total)
+    }
+
+    pub fn spectator_slots(&self) -> ClientSlots {
+        let used = self.spectators.len() as u32;
+        let total = self
+            .settings
+            .maxspectators
+            .map(|v| v as u32)
+            .unwrap_or(used);
+        ClientSlots::new(used, total)
+    }
+}
+
+impl From<&QuakeServer> for GameServer {
+    fn from(server: &QuakeServer) -> Self {
+        let mut clients: Vec<QuakeClient> = server.clients().into();
+        clients.sort();
+
+        let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
+
+        let mut players: Vec<Player> = clients
+            .iter()
+            .filter(|c| !c.is_spectator())
+            .map(Player::from)
+            .collect();
+
+        if is_teamplay {
+            players.sort_by(|a, b| unicode::ord(&a.team, &b.team));
+        }
+
+        let spectators: Vec<Spectator> = clients
+            .iter()
+            .filter(|c| c.is_spectator())
+            .map(Spectator::from)
+            .collect();
+
+        let teams = match is_teamplay {
+            true => team::players_to_teams(&players),
+            _ => vec![],
+        };
+
+        Self {
+            settings: server.settings().clone(),
+            teams,
+            players,
+            spectators,
+            qtv_stream: server.qtv_stream().cloned(),
+            geo: server.geo().clone(),
+        }
+    }
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::*;
+    use crate::generic_server::geo::Coords;
+    use crate::generic_server::server_type::ServerType;
+    use crate::generic_server::software_type::SoftwareType;
+    use anyhow::Result;
+    use hostport::HostPort;
+    use pretty_assertions::assert_eq;
+
+    #[tokio::test]
+    async fn test_from_gameserver() -> Result<()> {
+        let geo = GeoInfo {
+            country_code: Some("US".to_string()),
+            country_name: Some("United States".to_string()),
+            city: Some("New York".to_string()),
+            region: Some("North America".to_string()),
+            coords: Some(Coords::new(40.7128, -74.0060)),
+        };
+        let server = GameServer::from(&QuakeServer {
+            server_type: ServerType::GameServer,
+            software_type: SoftwareType::Mvdsv,
+            address: HostPort::new("localhost", 28501)?,
+            ip: "10.10.10.10".to_string(),
+            settings: Settings {
+                hostname: Some("LocalQuake".to_string()),
+                maxclients: Some(8),
+                maxspectators: Some(6),
+                teamplay: Some(2),
+                ..Default::default()
+            },
+            clients: vec![
+                QuakeClient {
+                    name: "Player1".to_string(),
+                    team: "red".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                QuakeClient {
+                    name: "Player2".to_string(),
+                    team: "blue".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                QuakeClient {
+                    name: "Spectator1".to_string(),
+                    is_spectator: true,
+                    ..Default::default()
+                },
+            ],
+            qtv_stream: None,
+            geo: geo.clone(),
+        });
+        assert_eq!(server.settings().hostname, Some("LocalQuake".to_string()));
+        assert_eq!(server.settings().maxclients, Some(8));
+        assert_eq!(server.settings().maxspectators, Some(6));
+        assert_eq!(server.teams.len(), 2);
+        assert_eq!(server.players().len(), 2);
+        assert_eq!(server.spectators().len(), 1);
+        assert_eq!(server.qtv_stream(), None);
+        assert_eq!(server.player_slots(), ClientSlots::new(2, 8));
+        assert_eq!(server.spectator_slots(), ClientSlots::new(1, 6));
+        assert_eq!(server.spectator_slots(), ClientSlots::new(1, 6));
+        assert_eq!(server.geo(), &geo);
+        Ok(())
+    }
+}
