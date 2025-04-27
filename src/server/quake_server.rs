@@ -1,13 +1,13 @@
-use super::client::QuakeClient;
-use super::geo::GeoInfo;
-use super::server_type::ServerType;
-use super::software_type::SoftwareType;
-use super::stream::QtvStream;
+use super::qtv_stream::QtvStream;
+use super::quake_client::QuakeClient;
 use super::svc_status;
+use crate::common::geo::GeoInfo;
+use crate::common::server_type::ServerType;
+use crate::common::software_type::SoftwareType;
 use crate::game_server::server::GameServer;
 use crate::qtv::server::QtvServer;
-use crate::qtv::svc_qtvusers;
 use crate::qwfwd::server::QwfwdServer;
+use crate::server::svc_qtvusers;
 use crate::util::net_extra;
 use hostport::HostPort;
 pub use quake_serverinfo::Settings;
@@ -16,7 +16,6 @@ use std::time::Duration;
 #[cfg(feature = "json")]
 use serde::{Serialize, Serializer, ser::SerializeStruct};
 
-/// Generic Quake server with common functionality
 #[derive(Debug, Clone, PartialEq)]
 pub struct QuakeServer {
     pub(crate) server_type: ServerType,
@@ -154,7 +153,7 @@ impl Serialize for QuakeServer {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
-    use crate::generic_server::geo::Coords;
+    use crate::common::geo::Coords;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 

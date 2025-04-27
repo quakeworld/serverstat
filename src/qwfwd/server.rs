@@ -1,7 +1,7 @@
-use crate::generic_server::client_slots::ClientSlots;
-use crate::generic_server::server::QuakeServer;
+use crate::common::client_slots::ClientSlots;
 use crate::qwfwd::client::QwfwdClient;
 use crate::qwfwd::settings::QwfwdSettings;
+use crate::server::quake_server::QuakeServer;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
@@ -42,10 +42,10 @@ impl QwfwdServer {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::generic_server::client::QuakeClient;
-    use crate::generic_server::server::QuakeServer;
     use crate::qwfwd::client::QwfwdClient;
     use crate::qwfwd::server::QwfwdServer;
+    use crate::server::quake_client::QuakeClient;
+    use crate::server::quake_server::QuakeServer;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
     use std::time::Duration;

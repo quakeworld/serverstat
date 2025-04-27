@@ -1,10 +1,10 @@
 //! Game server (clients can connect as player or spectator)
+use crate::common::client_slots::ClientSlots;
+use crate::common::geo::GeoInfo;
 use crate::game_server::{player::Player, spectator::Spectator, team, team::Team};
-use crate::generic_server::client::QuakeClient;
-use crate::generic_server::client_slots::ClientSlots;
-use crate::generic_server::geo::GeoInfo;
-use crate::generic_server::server::QuakeServer;
-use crate::generic_server::stream::QtvStream;
+use crate::server::qtv_stream::QtvStream;
+use crate::server::quake_client::QuakeClient;
+use crate::server::quake_server::QuakeServer;
 use quake_serverinfo::Settings;
 use quake_text::unicode;
 
@@ -108,9 +108,9 @@ impl From<&QuakeServer> for GameServer {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
-    use crate::generic_server::geo::Coords;
-    use crate::generic_server::server_type::ServerType;
-    use crate::generic_server::software_type::SoftwareType;
+    use crate::common::geo::Coords;
+    use crate::common::server_type::ServerType;
+    use crate::common::software_type::SoftwareType;
     use anyhow::Result;
     use hostport::HostPort;
     use pretty_assertions::assert_eq;

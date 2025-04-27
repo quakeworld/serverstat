@@ -1,4 +1,4 @@
-use crate::generic_server::client::QuakeClient;
+use crate::server::quake_client::QuakeClient;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};

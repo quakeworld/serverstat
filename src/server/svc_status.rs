@@ -1,5 +1,5 @@
-use crate::generic_server::client::QuakeClient;
-use crate::generic_server::stream::QtvStream;
+use crate::server::qtv_stream::QtvStream;
+use crate::server::quake_client::QuakeClient;
 use anyhow::Result;
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};

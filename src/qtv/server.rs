@@ -1,7 +1,7 @@
-use crate::generic_server::client_slots::ClientSlots;
-use crate::generic_server::server::QuakeServer;
+use crate::common::client_slots::ClientSlots;
 use crate::qtv::client::QtvClient;
 use crate::qtv::settings::QtvSettings;
+use crate::server::quake_server::QuakeServer;
 
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
@@ -40,11 +40,11 @@ impl QtvServer {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::generic_server::client::QuakeClient;
-    use crate::generic_server::server::QuakeServer;
-    use crate::generic_server::stream::QtvStream;
     use crate::qtv::client::QtvClient;
     use crate::qtv::server::QtvServer;
+    use crate::server::qtv_stream::QtvStream;
+    use crate::server::quake_client::QuakeClient;
+    use crate::server::quake_server::QuakeServer;
     use anyhow::Result;
     use hostport::HostPort;
     use pretty_assertions::assert_eq;

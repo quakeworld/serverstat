@@ -1,3 +1,4 @@
+/// Represents used/total/free client slots
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "json", derive(serde::Serialize))]
 pub struct ClientSlots {

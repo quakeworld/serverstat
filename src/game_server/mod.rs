@@ -1,4 +1,4 @@
-//! Generic game server (clients can connect as players or spectators)
+//! Game server (clients can connect as players or spectators)
 pub(crate) mod player;
 pub(crate) mod server;
 pub(crate) mod spectator;

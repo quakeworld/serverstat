@@ -9,6 +9,7 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "json")]
 use serde::{Deserialize, Serialize};
 
+/// Geographical information
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
@@ -42,6 +43,7 @@ impl GeoInfo {
     }
 }
 
+/// Coordinates (latitude and longitude)
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct Coords {
