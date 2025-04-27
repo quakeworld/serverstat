@@ -4,7 +4,6 @@
 // Private modules - implementation details
 pub mod game_server;
 pub mod geo;
-pub mod hostport;
 pub(crate) mod net_extra;
 pub mod qtv;
 pub mod quake_client;

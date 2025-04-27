@@ -117,8 +117,8 @@ pub enum Status119ResponseError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hostport::HostPort;
     use anyhow::Result;
+    use hostport::HostPort;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -196,10 +196,7 @@ mod tests {
                 assert_eq!(qtv_stream.id(), 1);
                 assert_eq!(qtv_stream.name(), "zasadzka Qtv (2)".to_string());
                 assert_eq!(qtv_stream.number(), 2);
-                assert_eq!(
-                    qtv_stream.address(),
-                    &HostPort::new("zasadzka.pl".to_string(), 28000)?
-                );
+                assert_eq!(qtv_stream.address(), &HostPort::new("zasadzka.pl", 28000)?);
                 assert_eq!(qtv_stream.client_count(), 2);
                 assert!(qtv_stream.client_names().is_empty());
 

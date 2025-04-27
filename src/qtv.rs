@@ -6,7 +6,7 @@ use crate::quake_client::QuakeClient;
 use crate::quake_server::{ClientSlots, QuakeServer};
 use crate::tokenize;
 
-use crate::hostport::HostPort;
+use hostport::HostPort;
 use serde::Serializer;
 use serde::ser::SerializeStruct;
 
@@ -229,7 +229,7 @@ mod tests {
     fn test_qtvstream_methods() -> Result<()> {
         let stream = QtvStream {
             number: 2,
-            address: HostPort::new("dm6.uk".to_string(), 28000)?,
+            address: HostPort::new("dm6.uk", 28000)?,
             ..Default::default()
         };
         assert_eq!(stream.url(), "2@dm6.uk:28000".to_string());
@@ -244,7 +244,7 @@ mod tests {
                 id: 1,
                 name: "dm6.uk Qtv (7)".to_string(),
                 number: 7,
-                address: HostPort::new("dm6.uk".to_string(), 28000)?,
+                address: HostPort::new("dm6.uk", 28000)?,
                 client_count: 4,
                 client_names: vec![],
             }
@@ -256,7 +256,7 @@ mod tests {
     fn test_qtvstream_serialize() -> Result<()> {
         let server = QtvStream {
             number: 7,
-            address: HostPort::new("dm6.uk".to_string(), 28000)?,
+            address: HostPort::new("dm6.uk", 28000)?,
             ..Default::default()
         };
         assert!(serde_json::to_string(&server)?.contains(r#""url":"7@dm6.uk:28000""#));

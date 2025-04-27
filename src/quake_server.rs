@@ -5,13 +5,13 @@ use std::time::Duration;
 pub use quake_serverinfo::Settings;
 
 use crate::geo::GeoInfo;
-use crate::hostport::HostPort;
 use crate::qtv::QtvStream;
 use crate::quake_client::QuakeClient;
 use crate::server_type::ServerType;
 use crate::software_type::SoftwareType;
 use crate::svc_status;
 use crate::{net_extra, svc_qtvusers};
+use hostport::HostPort;
 
 #[cfg(feature = "json")]
 use {
@@ -206,10 +206,7 @@ mod tests {
                 .unwrap()
                 .starts_with("berlin2 KTX Server")
         );
-        assert_eq!(
-            server.address,
-            HostPort::new("berlin2.qwsv.net".to_string(), 27500)?
-        );
+        assert_eq!(server.address, HostPort::new("berlin2.qwsv.net", 27500)?);
 
         assert_eq!(
             server.geo,
@@ -230,7 +227,7 @@ mod tests {
         let server = QuakeServer {
             server_type: ServerType::GameServer,
             software_type: SoftwareType::Mvdsv,
-            address: HostPort::new("localhost".to_string(), 27500)?,
+            address: HostPort::new("localhost", 27500)?,
             ip: "10.10.10.10".to_string(),
             settings: Settings::default(),
             clients: vec![],
@@ -255,7 +252,7 @@ mod tests {
         let server = QuakeServer {
             server_type: ServerType::QtvServer,
             software_type: SoftwareType::Qtv,
-            address: HostPort::new("qtv".to_string(), 28000)?,
+            address: HostPort::new("qtv", 28000)?,
             ip: "10.10.10.10".to_string(),
             settings: Settings::default(),
             clients: vec![],
@@ -280,7 +277,7 @@ mod tests {
         let server = QuakeServer {
             server_type: ServerType::ProxyServer,
             software_type: SoftwareType::Qwfwd,
-            address: HostPort::new("proxy".to_string(), 30000)?,
+            address: HostPort::new("proxy", 30000)?,
             ip: "10.10.10.10".to_string(),
             settings: Settings::default(),
             clients: vec![],
