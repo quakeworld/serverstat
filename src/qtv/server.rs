@@ -89,17 +89,6 @@ mod tests {
     }
 
     #[test]
-    fn test_qtvstream_serialize() -> Result<()> {
-        let server = QtvStream {
-            number: Some(7),
-            address: Some(HostPort::new("dm6.uk", 28000)?),
-            ..Default::default()
-        };
-        assert!(serde_json::to_string(&server)?.contains(r#""url":"7@dm6.uk:28000""#));
-        Ok(())
-    }
-
-    #[test]
     fn test_qtvclient_from_quakeclient() {
         assert_eq!(
             QtvClient::from(&QuakeClient {

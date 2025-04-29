@@ -4,9 +4,6 @@ use super::svc_status;
 use crate::common::geo::GeoInfo;
 use crate::common::server_type::ServerType;
 use crate::common::software_type::SoftwareType;
-use crate::game_server::server::GameServer;
-use crate::qtv::server::QtvServer;
-use crate::qwfwd::server::QwfwdServer;
 use crate::server::svc_qtvusers;
 use crate::util::net_extra;
 use hostport::HostPort;
@@ -14,9 +11,10 @@ pub use quake_serverinfo::Settings;
 use std::time::Duration;
 
 #[cfg(feature = "json")]
-use serde::{Serialize, Serializer, ser::SerializeStruct};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QuakeServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
@@ -98,57 +96,6 @@ impl QuakeServer {
     }
 }
 
-#[cfg(feature = "json")]
-impl Serialize for QuakeServer {
-    fn serialize<S>(&self, serializer: S) -> anyhow::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        mod field_count {
-            pub const COMMON: usize = 7;
-            pub const UTIL_SERVER: usize = 3;
-            pub const GAME_SERVER: usize = 7;
-        }
-
-        let field_count: usize = field_count::COMMON
-            + match self.software_type {
-                SoftwareType::Qtv | SoftwareType::Qwfwd => field_count::UTIL_SERVER,
-                _ => field_count::GAME_SERVER,
-            };
-
-        let mut state = serializer.serialize_struct("QuakeServer", field_count)?;
-        state.serialize_field("server_type", &self.server_type)?;
-        state.serialize_field("software_type", &self.software_type)?;
-        state.serialize_field("host", &self.address.host())?;
-        state.serialize_field("ip", &self.ip())?;
-        state.serialize_field("port", &self.address.port())?;
-        state.serialize_field("address", &self.address)?;
-        state.serialize_field("geo", &self.geo)?;
-
-        if self.software_type == SoftwareType::Qtv {
-            let qtv = QtvServer::from(self);
-            state.serialize_field("settings", qtv.settings())?;
-            state.serialize_field("client_slots", &qtv.client_slots())?;
-            state.serialize_field("clients", qtv.clients())?;
-        } else if self.software_type == SoftwareType::Qwfwd {
-            let qwfwd = QwfwdServer::from(self);
-            state.serialize_field("settings", qwfwd.settings())?;
-            state.serialize_field("client_slots", &qwfwd.client_slots())?;
-            state.serialize_field("clients", qwfwd.clients())?;
-        } else {
-            let server = GameServer::from(self);
-            state.serialize_field("settings", server.settings())?;
-            state.serialize_field("player_slots", &server.player_slots())?;
-            state.serialize_field("spectator_slots", &server.spectator_slots())?;
-            state.serialize_field("teams", server.teams())?;
-            state.serialize_field("players", server.players())?;
-            state.serialize_field("spectators", server.spectators())?;
-            state.serialize_field("qtv_stream", &server.qtv_stream())?;
-        }
-        state.end()
-    }
-}
-
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
@@ -193,81 +140,6 @@ mod tests {
             );
         }
 
-        Ok(())
-    }
-
-    #[test]
-    fn test_serialize_quakeserver() -> Result<()> {
-        let server = QuakeServer {
-            server_type: ServerType::GameServer,
-            software_type: SoftwareType::Mvdsv,
-            address: HostPort::new("localhost", 27500)?,
-            ip: "10.10.10.10".to_string(),
-            settings: Settings::default(),
-            clients: vec![],
-            qtv_stream: None,
-            geo: GeoInfo {
-                country_code: Some("US".to_string()),
-                city: Some("New York".to_string()),
-                region: Some("NY".to_string()),
-                country_name: Some("United States".to_string()),
-                coords: Some(Coords::new(40.7128, -74.0060)),
-            },
-        };
-        assert_eq!(
-            serde_json::to_string(&server)?,
-            r#"{"server_type":"game_server","software_type":"mvdsv","host":"localhost","ip":"10.10.10.10","port":27500,"address":"localhost:27500","geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}},"settings":{"admin":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"player_slots":{"total":0,"used":0,"free":0},"spectator_slots":{"total":0,"used":0,"free":0},"teams":[],"players":[],"spectators":[],"qtv_stream":null}"#
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_serialize_qtv() -> Result<()> {
-        let server = QuakeServer {
-            server_type: ServerType::QtvServer,
-            software_type: SoftwareType::Qtv,
-            address: HostPort::new("qtv", 28000)?,
-            ip: "10.10.10.10".to_string(),
-            settings: Settings::default(),
-            clients: vec![],
-            qtv_stream: None,
-            geo: GeoInfo {
-                country_code: Some("US".to_string()),
-                city: Some("New York".to_string()),
-                region: Some("NY".to_string()),
-                country_name: Some("United States".to_string()),
-                coords: Some(Coords::new(40.7128, -74.0060)),
-            },
-        };
-        assert_eq!(
-            serde_json::to_string(&server)?,
-            r#"{"server_type":"qtv_server","software_type":"qtv","host":"qtv","ip":"10.10.10.10","port":28000,"address":"qtv:28000","geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}},"settings":{"hostname":"","maxclients":0,"version":""},"client_slots":{"total":0,"used":0,"free":0},"clients":[]}"#
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_serialize_qwfwd() -> Result<()> {
-        let server = QuakeServer {
-            server_type: ServerType::ProxyServer,
-            software_type: SoftwareType::Qwfwd,
-            address: HostPort::new("proxy", 30000)?,
-            ip: "10.10.10.10".to_string(),
-            settings: Settings::default(),
-            clients: vec![],
-            qtv_stream: None,
-            geo: GeoInfo {
-                country_code: Some("US".to_string()),
-                city: Some("New York".to_string()),
-                region: Some("NY".to_string()),
-                country_name: Some("United States".to_string()),
-                coords: Some(Coords::new(40.7128, -74.0060)),
-            },
-        };
-        assert_eq!(
-            serde_json::to_string(&server)?,
-            r#"{"server_type":"proxy_server","software_type":"qwfwd","host":"proxy","ip":"10.10.10.10","port":30000,"address":"proxy:30000","geo":{"country_code":"US","country_name":"United States","city":"New York","region":"NY","coords":{"lat":40.7128,"lng":-74.006}},"settings":{"hostname":"","maxclients":0,"version":"","city":null,"coords":null,"countrycode":null,"hostport":null},"client_slots":{"total":0,"used":0,"free":0},"clients":[]}"#
-        );
         Ok(())
     }
 }

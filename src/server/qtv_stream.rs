@@ -3,11 +3,10 @@ use hostport::HostPort;
 use quake_text::bytestr::to_unicode;
 
 #[cfg(feature = "json")]
-use serde::ser::SerializeStruct;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Deserialize))]
+#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
 pub struct QtvStream {
     pub(crate) id: u32,
     pub(crate) name: String,
@@ -90,25 +89,6 @@ impl TryFrom<&[u8]> for QtvStream {
     }
 }
 
-#[cfg(feature = "json")]
-#[cfg_attr(coverage_nightly, coverage(off))]
-impl Serialize for QtvStream {
-    fn serialize<S>(&self, serializer: S) -> anyhow::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("QtvStream", 7)?;
-        state.serialize_field("id", &self.id)?;
-        state.serialize_field("name", &self.name)?;
-        state.serialize_field("number", &self.number)?;
-        state.serialize_field("address", &self.address)?;
-        state.serialize_field("url", &self.url())?;
-        state.serialize_field("client_count", &self.client_count)?;
-        state.serialize_field("client_names", &self.client_names)?;
-        state.end()
-    }
-}
-
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
@@ -145,24 +125,6 @@ mod tests {
             assert_eq!(stream.url(), Some("1@quake.se:28000".to_string()));
         }
 
-        Ok(())
-    }
-
-    #[test]
-    fn test_serialize() -> Result<()> {
-        let stream = QtvStream {
-            id: 2,
-            name: "QUAKE.SE KTX Qtv (1)".to_string(),
-            number: Some(1),
-            address: Some(HostPort::new("quake.se", 28000)?),
-            client_count: 0,
-            client_names: vec![],
-        };
-
-        assert_eq!(
-            serde_json::to_string(&stream)?,
-            r#"{"id":2,"name":"QUAKE.SE KTX Qtv (1)","number":1,"address":"quake.se:28000","url":"1@quake.se:28000","client_count":0,"client_names":[]}"#
-        );
         Ok(())
     }
 }
