@@ -49,8 +49,8 @@ impl QtvStream {
         self.client_count
     }
 
-    pub fn client_names(&self) -> &[String] {
-        &self.client_names
+    pub fn client_names(&self) -> std::slice::Iter<String> {
+        self.client_names.iter()
     }
 
     pub fn url(&self) -> Option<String> {

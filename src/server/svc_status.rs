@@ -205,7 +205,7 @@ mod tests {
                     Some(&HostPort::new("zasadzka.pl", 28000)?)
                 );
                 assert_eq!(qtv_stream.client_count(), 2);
-                assert!(qtv_stream.client_names().is_empty());
+                assert!(qtv_stream.client_names().as_slice().is_empty());
 
                 assert_eq!(
                     res.clients,
