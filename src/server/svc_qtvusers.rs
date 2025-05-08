@@ -40,8 +40,8 @@ impl QtvusersResponse {
         self.stream_id
     }
 
-    pub fn client_names(&self) -> &[String] {
-        &self.client_names
+    pub fn client_names(&self) -> std::slice::Iter<String> {
+        self.client_names.iter()
     }
 }
 
@@ -151,7 +151,7 @@ mod tests {
             let bytes = b"\xff\xff\xff\xffnqtvusers 1\n".as_slice();
             let res = QtvusersResponse::try_from(bytes)?;
             assert_eq!(res.stream_id(), 1);
-            assert!(res.client_names().is_empty());
+            assert!(res.client_names().as_slice().is_empty());
         }
 
         // has users
@@ -160,7 +160,7 @@ mod tests {
             let res = QtvusersResponse::try_from(bytes)?;
             assert_eq!(res.stream_id(), 12);
             assert_eq!(
-                res.client_names(),
+                res.client_names().as_slice(),
                 &["[streambot]".to_string(), "XantoM".to_string()]
             );
         }

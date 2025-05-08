@@ -18,15 +18,15 @@ impl QwfwdServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> &[QwfwdClient] {
-        &self.clients
+    pub fn clients(&self) -> impl Iterator<Item = &QwfwdClient> {
+        self.clients.iter()
     }
 }
 
 impl From<&QuakeServer> for QwfwdServer {
     fn from(server: &QuakeServer) -> Self {
         let settings = QwfwdSettings::from(server.settings());
-        let clients = server.clients().iter().map(QwfwdClient::from).collect();
+        let clients = server.clients().map(QwfwdClient::from).collect();
         Self { settings, clients }
     }
 }

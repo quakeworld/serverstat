@@ -48,8 +48,16 @@ impl QuakeServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> &[QuakeClient] {
-        &self.clients
+    pub fn clients(&self) -> impl Iterator<Item = &QuakeClient> {
+        self.clients.iter()
+    }
+
+    pub fn players(&self) -> impl Iterator<Item = &QuakeClient> {
+        self.clients().filter(|client| !client.is_spectator())
+    }
+
+    pub fn spectators(&self) -> impl Iterator<Item = &QuakeClient> {
+        self.clients().filter(|client| client.is_spectator())
     }
 
     pub fn qtv_stream(&self) -> Option<&QtvStream> {
@@ -68,7 +76,8 @@ impl QuakeServer {
                 let qtvusers_res = svc_qtvusers::qtvusers(address, timeout)
                     .await
                     .unwrap_or_default();
-                Some(qtv_stream.with_client_names(qtvusers_res.client_names()))
+                let client_names = qtvusers_res.client_names().as_slice();
+                Some(qtv_stream.with_client_names(client_names))
             }
             None => None,
         };
@@ -89,9 +98,9 @@ impl QuakeServer {
             address,
             ip,
             settings: res.settings().clone(),
-            clients: res.clients().into(),
+            clients: res.clients().cloned().collect(),
             qtv_stream,
-            geo: GeoInfo::from(&res.settings().clone()),
+            geo: GeoInfo::from(res.settings()),
         })
     }
 }

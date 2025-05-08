@@ -28,16 +28,16 @@ impl GameServer {
         &self.settings
     }
 
-    pub fn teams(&self) -> &[Team] {
-        &self.teams
+    pub fn teams(&self) -> impl Iterator<Item = &Team> {
+        self.teams.iter()
     }
 
-    pub fn players(&self) -> &[Player] {
-        &self.players
+    pub fn players(&self) -> impl Iterator<Item = &Player> {
+        self.players.iter()
     }
 
-    pub fn spectators(&self) -> &[Spectator] {
-        &self.spectators
+    pub fn spectators(&self) -> impl Iterator<Item = &Spectator> {
+        self.spectators.iter()
     }
 
     pub fn qtv_stream(&self) -> Option<&QtvStream> {
@@ -67,27 +67,17 @@ impl GameServer {
 
 impl From<&QuakeServer> for GameServer {
     fn from(server: &QuakeServer) -> Self {
-        let mut clients: Vec<QuakeClient> = server.clients().into();
+        let mut clients: Vec<QuakeClient> = server.clients().cloned().collect();
         clients.sort();
 
         let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
-
-        let mut players: Vec<Player> = clients
-            .iter()
-            .filter(|c| !c.is_spectator())
-            .map(Player::from)
-            .collect();
+        let mut players: Vec<Player> = server.players().map(Player::from).collect();
 
         if is_teamplay {
             players.sort_by(|a, b| unicode::ord(&a.team, &b.team));
         }
 
-        let spectators: Vec<Spectator> = clients
-            .iter()
-            .filter(|c| c.is_spectator())
-            .map(Spectator::from)
-            .collect();
-
+        let spectators: Vec<Spectator> = server.spectators().map(Spectator::from).collect();
         let teams = match is_teamplay {
             true => team::players_to_teams(&players),
             _ => vec![],
@@ -162,8 +152,8 @@ mod tests {
         assert_eq!(server.settings().maxclients, Some(8));
         assert_eq!(server.settings().maxspectators, Some(6));
         assert_eq!(server.teams.len(), 2);
-        assert_eq!(server.players().len(), 2);
-        assert_eq!(server.spectators().len(), 1);
+        assert_eq!(server.players().count(), 2);
+        assert_eq!(server.spectators().count(), 1);
         assert_eq!(server.qtv_stream(), None);
         assert_eq!(server.player_slots(), ClientSlots::new(2, 8));
         assert_eq!(server.spectator_slots(), ClientSlots::new(1, 6));

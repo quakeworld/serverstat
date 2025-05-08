@@ -16,7 +16,7 @@ pub struct QtvServer {
 impl From<&QuakeServer> for QtvServer {
     fn from(server: &QuakeServer) -> Self {
         let settings = QtvSettings::from(server.settings());
-        let clients = server.clients().iter().map(QtvClient::from).collect();
+        let clients = server.clients().map(QtvClient::from).collect();
         Self { settings, clients }
     }
 }
@@ -26,8 +26,8 @@ impl QtvServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> &[QtvClient] {
-        &self.clients
+    pub fn clients(&self) -> impl Iterator<Item = &QtvClient> {
+        self.clients.iter()
     }
 
     pub fn client_slots(&self) -> ClientSlots {

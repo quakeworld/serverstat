@@ -50,8 +50,8 @@ impl Status119Response {
         &self.settings
     }
 
-    pub fn clients(&self) -> &[QuakeClient] {
-        &self.clients
+    pub fn clients(&self) -> impl Iterator<Item = &QuakeClient> {
+        self.clients.iter()
     }
 
     pub fn qtv_stream(&self) -> &Option<QtvStream> {
