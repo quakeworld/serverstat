@@ -16,6 +16,7 @@ pub enum SoftwareType {
     Mvdsv,
     Qtv,
     Qwfwd,
+    ZQuake,
     Unknown,
 }
 
@@ -27,6 +28,7 @@ impl Display for SoftwareType {
             SoftwareType::Mvdsv => write!(f, "MVDSV"),
             SoftwareType::Qtv => write!(f, "QTV"),
             SoftwareType::Qwfwd => write!(f, "QWFWD"),
+            SoftwareType::ZQuake => write!(f, "ZQuake"),
             SoftwareType::Unknown => write!(f, "Unknown"),
         }
     }
@@ -43,6 +45,7 @@ impl SoftwareType {
             "qtvgo" => SoftwareType::Qtv,
             "qtv" => SoftwareType::Qtv,
             "qwfwd" => SoftwareType::Qwfwd,
+            "zquake" => SoftwareType::ZQuake,
             _ => SoftwareType::Unknown,
         }
     }
@@ -60,6 +63,7 @@ mod tests {
         assert_eq!(SoftwareType::Mvdsv.to_string(), "MVDSV");
         assert_eq!(SoftwareType::Qtv.to_string(), "QTV");
         assert_eq!(SoftwareType::Qwfwd.to_string(), "QWFWD");
+        assert_eq!(SoftwareType::ZQuake.to_string(), "ZQuake");
         assert_eq!(SoftwareType::Unknown.to_string(), "Unknown");
     }
 
@@ -74,6 +78,10 @@ mod tests {
         assert_eq!(SoftwareType::from_version("qtvgo 1.0"), SoftwareType::Qtv);
         assert_eq!(SoftwareType::from_version("qtv 1.0"), SoftwareType::Qtv);
         assert_eq!(SoftwareType::from_version("qwfwd 1.0"), SoftwareType::Qwfwd);
+        assert_eq!(
+            SoftwareType::from_version("zquake 1.0"),
+            SoftwareType::ZQuake
+        );
         assert_eq!(
             SoftwareType::from_version("unknown 1.0"),
             SoftwareType::Unknown
