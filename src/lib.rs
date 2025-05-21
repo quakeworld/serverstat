@@ -17,6 +17,3 @@ pub use common::client_slots::ClientSlots;
 pub use common::geo::{Coords, GeoInfo, GeoInfoBuilder};
 pub use common::server_type::ServerType;
 pub use common::software_type::SoftwareType;
-
-// re-exported for convenience
-pub use hostport::HostPort;

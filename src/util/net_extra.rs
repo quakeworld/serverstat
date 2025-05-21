@@ -1,23 +1,16 @@
-use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs};
+use anyhow::{Result, anyhow as e};
+use std::net::{SocketAddr, ToSocketAddrs};
 
-pub fn resolve_address_to_ip(address: &str) -> Option<String> {
-    let host = address.split_once(':').map_or(address, |(h, _)| h);
-
-    if host.parse::<Ipv4Addr>().is_ok() {
-        return Some(host.to_string());
-    }
-
-    address
+/// Resolves a hostname or IP string to an IPv4 address.
+pub fn resolve_host(host: &str) -> Result<String> {
+    (host, 0)
         .to_socket_addrs()
-        .ok()?
-        .filter_map(|addr| {
-            if let SocketAddr::V4(v4_addr) = addr {
-                Some(v4_addr.ip().to_string())
-            } else {
-                None
-            }
+        .map_err(|_| e!("Failed to resolve '{}' to an IPv4 address.", host))?
+        .find_map(|addr| match addr {
+            SocketAddr::V4(v4) => Some(v4.ip().to_string()),
+            _ => None,
         })
-        .next()
+        .ok_or_else(|| e!("Failed to resolve '{}' to an IPv4 address.", host))
 }
 
 #[cfg(test)]
@@ -28,19 +21,13 @@ pub mod tests {
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
-    async fn test_resolve_address_to_ip() -> Result<()> {
-        assert!(resolve_address_to_ip("INVALID_ADDRESS").is_none());
-        assert_eq!(
-            resolve_address_to_ip("0:0:0:0:0:ffff:c0a8:0001:28000"),
-            None
-        );
-        assert_eq!(
-            resolve_address_to_ip("1.2.3.4:28000"),
-            Some("1.2.3.4".to_string())
-        );
+    async fn test_resolve_host() -> Result<()> {
+        assert!(resolve_host("INVALID_ADDRESS").is_err());
+        assert!(resolve_host("0:0:0:0:0:ffff:c0a8:0001:28000").is_err());
+        assert_eq!(resolve_host("1.2.3.4")?, "1.2.3.4".to_string());
         assert!(
-            [Some("1.1.1.1".to_string()), Some("1.0.0.1".to_string())]
-                .contains(&resolve_address_to_ip("one.one.one.one:26000"))
+            ["1.1.1.1".to_string(), "1.0.0.1".to_string()]
+                .contains(&resolve_host("one.one.one.one")?)
         );
         Ok(())
     }

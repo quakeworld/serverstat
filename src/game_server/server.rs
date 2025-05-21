@@ -102,7 +102,6 @@ mod tests {
     use crate::common::server_type::ServerType;
     use crate::common::software_type::SoftwareType;
     use anyhow::Result;
-    use hostport::HostPort;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
@@ -117,8 +116,8 @@ mod tests {
         let server = GameServer::from(&QuakeServer {
             server_type: ServerType::GameServer,
             software_type: SoftwareType::Mvdsv,
-            address: HostPort::new("localhost", 28501)?,
             ip: "10.10.10.10".to_string(),
+            port: 28501,
             settings: Settings {
                 hostname: Some("LocalQuake".to_string()),
                 maxclients: Some(8),

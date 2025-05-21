@@ -18,8 +18,8 @@ use serde::{Deserialize, Serialize};
 pub struct QuakeServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
-    pub(crate) address: HostPort,
     pub(crate) ip: String,
+    pub(crate) port: u16,
     pub(crate) settings: Settings,
     pub(crate) clients: Vec<QuakeClient>,
     pub(crate) qtv_stream: Option<QtvStream>,
@@ -36,12 +36,16 @@ impl QuakeServer {
         self.software_type.clone()
     }
 
-    pub fn address(&self) -> &HostPort {
-        &self.address
+    pub fn address(&self) -> String {
+        format!("{}:{}", self.ip, self.port)
     }
 
     pub fn ip(&self) -> &str {
         &self.ip
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
     }
 
     pub fn settings(&self) -> &Settings {
@@ -68,10 +72,10 @@ impl QuakeServer {
     }
 
     pub async fn try_from_address(address: &str, timeout: Duration) -> anyhow::Result<Self> {
-        let res = svc_status::status_119(address, timeout).await?;
-        let ip = net_extra::resolve_address_to_ip(address).unwrap_or_default();
+        let hostport = HostPort::try_from(address)?;
+        let status_res = svc_status::status_119(address, timeout).await?;
 
-        let qtv_stream = match res.qtv_stream() {
+        let qtv_stream = match status_res.qtv_stream() {
             Some(qtv_stream) => {
                 let qtvusers_res = svc_qtvusers::qtvusers(address, timeout)
                     .await
@@ -82,25 +86,18 @@ impl QuakeServer {
             None => None,
         };
 
-        let address = {
-            let address_string = res
-                .settings()
-                .hostport
-                .clone()
-                .unwrap_or(address.to_string());
-            HostPort::try_from(address_string.as_str())?
-        };
-        let version = res.settings().version.clone().unwrap_or_default();
+        let ip = net_extra::resolve_host(hostport.host())?;
+        let version = status_res.settings().version.clone().unwrap_or_default();
 
         Ok(QuakeServer {
             server_type: ServerType::from_version(&version),
             software_type: SoftwareType::from_version(&version),
-            address,
             ip,
-            settings: res.settings().clone(),
-            clients: res.clients().cloned().collect(),
+            port: hostport.port(),
+            settings: status_res.settings().clone(),
+            clients: status_res.clients().cloned().collect(),
             qtv_stream,
-            geo: GeoInfo::from(res.settings()),
+            geo: GeoInfo::from(status_res.settings()),
         })
     }
 }
@@ -112,6 +109,7 @@ mod tests {
     use crate::common::geo::Coords;
     use anyhow::Result;
     use pretty_assertions::assert_eq;
+    use std::net::{IpAddr, ToSocketAddrs};
 
     #[tokio::test]
     async fn test_try_from_address() -> Result<()> {
@@ -124,19 +122,25 @@ mod tests {
 
         // valid address
         {
+            let expected_ip = {
+                ("berlin2.qwsv.net", 0)
+                    .to_socket_addrs()?
+                    .find(|addr| matches!(addr.ip(), IpAddr::V4(_)))
+                    .map(|addr| addr.ip())
+                    .unwrap()
+            };
             let timeout = Duration::from_secs_f32(0.5);
             let server = QuakeServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
 
             assert_eq!(server.server_type(), ServerType::GameServer);
             assert_eq!(server.software_type(), SoftwareType::Mvdsv);
-            assert_eq!(server.address(), &HostPort::new("berlin2.qwsv.net", 27500)?);
-            assert!(!server.ip().is_empty());
+            assert_eq!(server.address(), format!("{expected_ip}:27500"));
+            assert_eq!(server.port(), 27500);
+            assert_eq!(server.ip(), expected_ip.to_string());
 
             let settings = server.settings().clone();
             assert!(settings.hostname.unwrap().starts_with("berlin2 KTX Server"));
-
             assert!(server.qtv_stream().is_some());
-
             assert_eq!(
                 server.geo(),
                 &GeoInfo {
