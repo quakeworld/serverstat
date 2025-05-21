@@ -36,7 +36,7 @@ impl ServerType {
             .unwrap_or(version)
             .to_lowercase();
 
-        if ["fo", "fte", "mvdsv"].contains(&prefix.as_str()) {
+        if ["fo", "fte", "mvdsv", "zquake"].contains(&prefix.as_str()) {
             ServerType::GameServer
         } else if ["qtvgo", "qtv"].contains(&prefix.as_str()) {
             ServerType::QtvServer
@@ -70,6 +70,10 @@ mod tests {
         assert_eq!(ServerType::from_version("fte 1.0"), ServerType::GameServer);
         assert_eq!(
             ServerType::from_version("mvdsv 1.0"),
+            ServerType::GameServer
+        );
+        assert_eq!(
+            ServerType::from_version("zquake 1.0"),
             ServerType::GameServer
         );
         assert_eq!(ServerType::from_version("qtvgo 1.0"), ServerType::QtvServer);
