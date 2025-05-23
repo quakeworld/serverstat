@@ -12,11 +12,8 @@ pub async fn qtvusers(
     // https://github.com/QW-Group/mvdsv/blob/master/src/sv_demo_qtv.c#L1379
     let bytes = {
         let message = b"\xff\xff\xff\xffqtvusers".to_vec();
-        let options = tinyudp::ReadOptions {
-            timeout,
-            buffer_size: 4 * 1024, // 4 kb
-        };
-        tinyudp::send_and_receive(address, &message, options)
+        let options = tinyudp::ReadOptions::new(timeout, 4 * 1024);
+        tinyudp::send_and_receive_async(address, &message, options)
             .await
             .map_err(|e| QtvusersResponseError::UdpError(e.to_string()))?
     };

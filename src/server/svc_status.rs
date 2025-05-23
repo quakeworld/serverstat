@@ -23,11 +23,8 @@ pub async fn status_119(
     // svc_status 119 = all except for STATUS_SPECTATORS_AS_PLAYERS
     let response_bytes = {
         let message = b"\xff\xff\xff\xffstatus 119".to_vec();
-        let options = tinyudp::ReadOptions {
-            timeout,
-            buffer_size: 64 * 1024, // 64 kb
-        };
-        tinyudp::send_and_receive(address, &message, options).await?
+        let options = tinyudp::ReadOptions::new(timeout, 64 * 1024);
+        tinyudp::send_and_receive_async(address, &message, options).await?
     };
     let response = Status119Response::try_from(response_bytes.as_slice())?;
     Ok(response)
@@ -106,7 +103,7 @@ impl TryFrom<&[u8]> for Status119Response {
 #[derive(Debug, Error)]
 pub enum Status119ResponseError {
     #[error("UDP error")]
-    UdpError(#[from] tinyudp::TinyudpError),
+    UdpError(#[from] tinyudp::Error),
 
     #[error("Invalid response header")]
     InvalidHeader,
