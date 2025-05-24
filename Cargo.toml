@@ -1,6 +1,6 @@
 [package]
 name = "serverstat"
-description = "Get server info from QuakeWorld servers."
+description = "Query QuakeWorld servers for settings and client information."
 keywords = ["servers", "quake", "quakeworld"]
 repository = "https://github.com/quakeworld/serverstat"
 authors = ["Viktor Persson <viktor.persson@arcsin.se>"]

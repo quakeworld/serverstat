@@ -1,3 +1,3 @@
 # serverstat
 
-> Get info from QuakeWorld servers
+> Query QuakeWorld servers for settings and client information.
