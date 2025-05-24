@@ -1,9 +1,9 @@
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents used/total/free client slots
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ClientSlots {
     total: u32,
     used: u32,

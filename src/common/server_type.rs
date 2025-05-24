@@ -1,12 +1,12 @@
 use std::fmt::Display;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Server types (game servers, proxy servers, QTV servers)
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
-    feature = "json",
+    feature = "serde",
     derive(Serialize, Deserialize),
     serde(rename_all = "snake_case")
 )]

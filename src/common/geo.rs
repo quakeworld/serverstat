@@ -6,12 +6,12 @@ use anyhow::Error;
 use phf::phf_map;
 use quake_serverinfo::Settings;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Geographical information
 #[derive(Debug, Clone, PartialEq, Default)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
     pub(crate) country_code: Option<String>,
     pub(crate) country_name: Option<String>,
@@ -102,7 +102,7 @@ impl GeoInfoBuilder {
 
 /// Coordinates (latitude and longitude)
 #[derive(Clone, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coords {
     lat: f64,
     lng: f64,

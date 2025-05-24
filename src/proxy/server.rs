@@ -3,11 +3,11 @@ use crate::proxy::client::ProxyClient;
 use crate::proxy::settings::ProxySettings;
 use crate::server::quake_server::QuakeServer;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProxyServer {
     settings: ProxySettings,
     clients: Vec<ProxyClient>,

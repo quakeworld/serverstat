@@ -4,11 +4,11 @@ use quake_text::unicode;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Team {
     name: String,
     frags: i32,

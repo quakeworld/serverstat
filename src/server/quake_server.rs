@@ -10,11 +10,11 @@ use hostport::HostPort;
 pub use quake_serverinfo::Settings;
 use std::time::Duration;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuakeServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,

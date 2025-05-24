@@ -4,14 +4,14 @@ use anyhow::Result;
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 const PLAYER_MIN_PING: usize = 12;
 const PLAYER_MAX_PING: usize = 600;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QuakeClient {
     pub(crate) id: u32,
     pub(crate) name: String,

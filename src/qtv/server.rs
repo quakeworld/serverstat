@@ -3,11 +3,11 @@ use crate::qtv::client::QtvClient;
 use crate::qtv::settings::QtvSettings;
 use crate::server::quake_server::QuakeServer;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvServer {
     settings: QtvSettings,
     clients: Vec<QtvClient>,

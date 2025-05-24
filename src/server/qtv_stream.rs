@@ -2,11 +2,11 @@ use crate::util::tokenize;
 use hostport::HostPort;
 use quake_text::bytestr::to_unicode;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvStream {
     pub(crate) id: u32,
     pub(crate) name: String,

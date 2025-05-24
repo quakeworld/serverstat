@@ -8,11 +8,11 @@ use crate::server::quake_server::QuakeServer;
 use quake_serverinfo::Settings;
 use quake_text::unicode;
 
-#[cfg(feature = "json")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, PartialEq)]
-#[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GameServer {
     settings: Settings,
     teams: Vec<Team>,
