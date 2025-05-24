@@ -9,8 +9,8 @@ pub(crate) mod util;
 
 // public api
 pub mod game_server;
+pub mod proxy;
 pub mod qtv;
-pub mod qwfwd;
 pub mod server;
 
 pub use common::client_slots::ClientSlots;

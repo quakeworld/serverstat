@@ -5,13 +5,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
-pub struct QwfwdClient {
+pub struct ProxyClient {
     pub(super) id: u32,
     pub(super) time: u32,
     pub(super) name: String,
 }
 
-impl From<&QuakeClient> for QwfwdClient {
+impl From<&QuakeClient> for ProxyClient {
     fn from(client: &QuakeClient) -> Self {
         Self {
             id: client.id(),
@@ -22,7 +22,7 @@ impl From<&QuakeClient> for QwfwdClient {
 }
 
 #[allow(dead_code)]
-impl QwfwdClient {
+impl ProxyClient {
     pub fn id(&self) -> u32 {
         self.id
     }
@@ -42,8 +42,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_qwfwdclient_from_quakeclient() {
-        let client: QwfwdClient = QwfwdClient::from(&QuakeClient {
+    fn test_proxyclient_from_quakeclient() {
+        let client = ProxyClient::from(&QuakeClient {
             id: 1,
             name: "TestClient".to_string(),
             time: 100,

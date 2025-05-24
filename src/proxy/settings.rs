@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "json", derive(Serialize, Deserialize))]
-pub struct QwfwdSettings {
+pub struct ProxySettings {
     hostname: String,
     maxclients: u32,
     version: String,
@@ -16,7 +16,7 @@ pub struct QwfwdSettings {
 }
 
 #[allow(dead_code)]
-impl QwfwdSettings {
+impl ProxySettings {
     pub fn hostname(&self) -> &str {
         &self.hostname
     }
@@ -46,7 +46,7 @@ impl QwfwdSettings {
     }
 }
 
-impl From<&Settings> for QwfwdSettings {
+impl From<&Settings> for ProxySettings {
     fn from(settings: &Settings) -> Self {
         Self {
             hostname: settings.hostname.clone().unwrap_or_default(),
@@ -66,7 +66,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_qwfwdsettings_from_settings() {
+    fn test_proxysettings_from_settings() {
         let settings = Settings {
             hostname: Some("Test Server".to_string()),
             maxclients: Some(16),
@@ -77,13 +77,13 @@ mod tests {
             hostport: Some("test.server:28000".to_string()),
             ..Default::default()
         };
-        let qwfwd_settings = QwfwdSettings::from(&settings);
-        assert_eq!(qwfwd_settings.hostname(), "Test Server");
-        assert_eq!(qwfwd_settings.maxclients(), 16);
-        assert_eq!(qwfwd_settings.version(), "QWFWD 1.0");
-        assert_eq!(qwfwd_settings.city(), Some("Test City"));
-        assert_eq!(qwfwd_settings.coords(), Some("12.34,56.78"));
-        assert_eq!(qwfwd_settings.countrycode(), Some("TC"));
-        assert_eq!(qwfwd_settings.hostport(), Some("test.server:28000"));
+        let proxy_settings = ProxySettings::from(&settings);
+        assert_eq!(proxy_settings.hostname(), "Test Server");
+        assert_eq!(proxy_settings.maxclients(), 16);
+        assert_eq!(proxy_settings.version(), "QWFWD 1.0");
+        assert_eq!(proxy_settings.city(), Some("Test City"));
+        assert_eq!(proxy_settings.coords(), Some("12.34,56.78"));
+        assert_eq!(proxy_settings.countrycode(), Some("TC"));
+        assert_eq!(proxy_settings.hostport(), Some("test.server:28000"));
     }
 }

@@ -1,4 +1,4 @@
-//! Generic server (game server, qtv or qwfwd)
+//! Generic server (game server, qtv or proxy)
 pub(crate) mod qtv_stream;
 pub(crate) mod quake_client;
 pub(crate) mod quake_server;
