@@ -1,31 +1,50 @@
-use crate::generic_server::client::GenericClient;
-use crate::generic_server::qtv_stream::QtvStream;
+use crate::{GenericClient, QtvStream};
 use anyhow::Result;
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};
 use std::time::Duration;
 use thiserror::Error;
+use tinyudp::ReadOptions;
+
+// see: https://github.com/QW-Group/mvdsv/blob/master/src/sv_main.c#L603-L610
+// #define STATUS_OLDSTYLE                 0
+// #define STATUS_SERVERINFO               1
+// #define STATUS_PLAYERS                  2
+// #define STATUS_SPECTATORS               4
+// #define STATUS_SPECTATORS_AS_PLAYERS    8 //for ASE - change only frags: show as "S"
+// #define STATUS_SHOWTEAMS                16
+// #define STATUS_SHOWQTV                  32
+// #define STATUS_SHOWFLAGS                64
+// svc_status 119 = all except for STATUS_SPECTATORS_AS_PLAYERS
 
 /// Sends a `status 119` query to the specified address and returns the parsed response.
-pub(super) async fn status_119(
+const CMD_STATUS_119: &[u8] = b"\xff\xff\xff\xffstatus 119";
+const BUFFER_SIZE: usize = 64 * 1024;
+
+pub(super) fn status_119(
     address: &str,
     timeout: Duration,
 ) -> Result<Status119Response, Status119ResponseError> {
-    // see: https://github.com/QW-Group/mvdsv/blob/master/src/sv_main.c#L603-L610
-    // #define STATUS_OLDSTYLE                 0
-    // #define STATUS_SERVERINFO               1
-    // #define STATUS_PLAYERS                  2
-    // #define STATUS_SPECTATORS               4
-    // #define STATUS_SPECTATORS_AS_PLAYERS    8 //for ASE - change only frags: show as "S"
-    // #define STATUS_SHOWTEAMS                16
-    // #define STATUS_SHOWQTV                  32
-    // #define STATUS_SHOWFLAGS                64
-    // svc_status 119 = all except for STATUS_SPECTATORS_AS_PLAYERS
-    let response_bytes = {
-        let message = b"\xff\xff\xff\xffstatus 119".to_vec();
-        let options = tinyudp::ReadOptions::new(timeout, 64 * 1024);
-        tinyudp::send_and_receive_async(address, &message, options).await?
-    };
+    let response_bytes = tinyudp::send_and_receive(
+        address,
+        CMD_STATUS_119,
+        ReadOptions::new(timeout, BUFFER_SIZE),
+    )?;
+    let response = Status119Response::try_from(response_bytes.as_slice())?;
+    Ok(response)
+}
+
+#[cfg(feature = "tokio")]
+pub(super) async fn status_119_async(
+    address: &str,
+    timeout: Duration,
+) -> Result<Status119Response, Status119ResponseError> {
+    let response_bytes = tinyudp::send_and_receive_async(
+        address,
+        CMD_STATUS_119,
+        ReadOptions::new(timeout, BUFFER_SIZE),
+    )
+    .await?;
     let response = Status119Response::try_from(response_bytes.as_slice())?;
     Ok(response)
 }

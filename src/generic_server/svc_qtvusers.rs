@@ -3,27 +3,44 @@ use anyhow::Result;
 use quake_text::bytestr;
 use std::time::Duration;
 use thiserror::Error;
+use tinyudp::ReadOptions;
 
 /// Sends a `qtvusers` request to the specified address and returns the response.
-pub async fn qtvusers(
+// https://github.com/QW-Group/mvdsv/blob/master/src/sv_demo_qtv.c#L1379
+const CMD_QTVUSERS: &[u8] = b"\xff\xff\xff\xffqtvusers";
+const BUFFER_SIZE: usize = 4 * 1024;
+
+pub(super) fn qtvusers(
     address: &str,
     timeout: Duration,
 ) -> Result<QtvusersResponse, QtvusersResponseError> {
-    // https://github.com/QW-Group/mvdsv/blob/master/src/sv_demo_qtv.c#L1379
-    let bytes = {
-        let message = b"\xff\xff\xff\xffqtvusers".to_vec();
-        let options = tinyudp::ReadOptions::new(timeout, 4 * 1024);
-        tinyudp::send_and_receive_async(address, &message, options)
-            .await
-            .map_err(|e| QtvusersResponseError::UdpError(e.to_string()))?
-    };
+    let bytes = tinyudp::send_and_receive(
+        address,
+        CMD_QTVUSERS,
+        ReadOptions::new(timeout, BUFFER_SIZE),
+    )
+    .map_err(|e| QtvusersResponseError::UdpError(e.to_string()))?;
+    QtvusersResponse::try_from(bytes.as_slice())
+}
 
+#[cfg(feature = "tokio")]
+pub(super) async fn qtvusers_async(
+    address: &str,
+    timeout: Duration,
+) -> Result<QtvusersResponse, QtvusersResponseError> {
+    let bytes = tinyudp::send_and_receive_async(
+        address,
+        CMD_QTVUSERS,
+        ReadOptions::new(timeout, BUFFER_SIZE),
+    )
+    .await
+    .map_err(|e| QtvusersResponseError::UdpError(e.to_string()))?;
     QtvusersResponse::try_from(bytes.as_slice())
 }
 
 /// Parses the response from a `qtvusers` request.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct QtvusersResponse {
+pub(super) struct QtvusersResponse {
     /// The stream ID of the server.
     stream_id: usize,
 
@@ -37,8 +54,8 @@ impl QtvusersResponse {
         self.stream_id
     }
 
-    pub fn client_names(&self) -> std::slice::Iter<String> {
-        self.client_names.iter()
+    pub fn client_names(&self) -> Vec<String> {
+        self.client_names.clone()
     }
 }
 
@@ -101,7 +118,7 @@ mod tests {
     async fn test_qtvusers() -> Result<()> {
         // invalid address
         assert_eq!(
-            qtvusers("INVALID_ADDRESS", Duration::from_secs(1))
+            qtvusers_async("INVALID_ADDRESS", Duration::from_secs(1))
                 .await
                 .unwrap_err(),
             QtvusersResponseError::UdpError(
@@ -111,7 +128,7 @@ mod tests {
 
         // timeout
         assert_eq!(
-            qtvusers("quake.se:28000", Duration::default())
+            qtvusers_async("quake.se:28000", Duration::default())
                 .await
                 .unwrap_err(),
             QtvusersResponseError::UdpError(
