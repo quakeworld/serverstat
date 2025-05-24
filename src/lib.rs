@@ -3,12 +3,12 @@
 //! # serverstat
 //! Get information from QuakeWorld servers
 
-// internal modules
-pub(crate) mod common;
-pub(crate) mod game_server;
-pub(crate) mod generic_server;
-pub(crate) mod proxy_server;
-pub(crate) mod qtv_server;
+// internal
+mod common;
+mod game_server;
+mod generic_server;
+mod proxy_server;
+mod qtv_server;
 
 // public api
 pub use common::client_slots::ClientSlots;

@@ -1,5 +1,5 @@
 //! # Geo Info
-//! This module provides functionality for working with geographical data,
+//! Functionality for working with geographical data,
 //! including country, city, region, and coordinates. It is used to enrich
 //! server information with location-based details.
 use anyhow::Error;

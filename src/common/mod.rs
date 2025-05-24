@@ -1,4 +1,4 @@
-pub(crate) mod client_slots;
-pub(crate) mod geo;
-pub(crate) mod server_type;
-pub(crate) mod software_type;
+pub(super) mod client_slots;
+pub(super) mod geo;
+pub(super) mod server_type;
+pub(super) mod software_type;
