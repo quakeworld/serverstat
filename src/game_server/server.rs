@@ -9,6 +9,7 @@ use quake_text::unicode;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a game server (a client can connect as [`Player`] or [`Spectator`]).
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GameServer {

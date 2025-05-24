@@ -1,7 +1,7 @@
 #![cfg_attr(coverage_nightly, feature(coverage_attribute))]
 
 //! # serverstat
-//! Get information from QuakeWorld servers
+//! Query QuakeWorld servers for settings and client information.
 
 // internal
 mod common;

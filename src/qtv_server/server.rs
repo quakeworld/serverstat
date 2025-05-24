@@ -4,6 +4,7 @@ use crate::{ClientSlots, QtvClient, QtvSettings};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a QTV server
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvServer {

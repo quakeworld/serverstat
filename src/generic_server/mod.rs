@@ -1,4 +1,3 @@
-//! Generic server (game server, qtv or proxy)
 pub(super) mod client;
 mod net_resolve;
 pub(super) mod qtv_stream;

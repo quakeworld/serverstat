@@ -3,6 +3,7 @@ use crate::generic_server::client::GenericClient;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// A client connected to a [`GameServer`](crate::GameServer) as spectator.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Spectator {

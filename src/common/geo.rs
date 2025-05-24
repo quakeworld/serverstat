@@ -9,7 +9,7 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// Geographical information
+/// Geolocation information for a server
 #[derive(Debug, Clone, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
@@ -43,6 +43,7 @@ impl GeoInfo {
     }
 }
 
+/// Builder for [`GeoInfo`]
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct GeoInfoBuilder {
     country_code: Option<String>,
@@ -100,7 +101,7 @@ impl GeoInfoBuilder {
     }
 }
 
-/// Coordinates (latitude and longitude)
+/// Geographic coordinates (latitude and longitude)
 #[derive(Clone, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Coords {

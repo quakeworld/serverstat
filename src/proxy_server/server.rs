@@ -4,6 +4,7 @@ use crate::{ClientSlots, ProxyClient, ProxySettings};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a proxy server
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProxyServer {

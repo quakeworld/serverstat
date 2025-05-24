@@ -5,6 +5,7 @@ use quake_text::bytestr::to_unicode;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a QTV stream in a [`GameServer`](crate::GameServer)
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvStream {

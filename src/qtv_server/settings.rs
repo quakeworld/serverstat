@@ -3,6 +3,7 @@ use quake_serverinfo::Settings;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Configuration settings for [`QtvServer`](crate::QtvServer) instances.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvSettings {

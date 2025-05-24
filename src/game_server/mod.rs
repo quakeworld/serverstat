@@ -1,4 +1,3 @@
-//! Game server (clients can connect as players or spectators)
 pub(super) mod player;
 pub(super) mod server;
 pub(super) mod spectator;
