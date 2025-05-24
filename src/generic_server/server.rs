@@ -1,14 +1,11 @@
-use super::net_resolve::resolve_host;
-use super::svc_status;
-use super::{client::GenericClient, svc_qtvusers};
-use crate::{GeoInfo, QtvStream, ServerType, SoftwareType};
-use hostport::HostPort;
+use super::query::ServerInfo;
+use crate::{GenericClient, GeoInfo, QtvStream, ServerType, SoftwareType};
 pub use quake_serverinfo::Settings;
-use std::time::Duration;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// Represents a server of unknown type.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GenericServer {
@@ -22,28 +19,26 @@ pub struct GenericServer {
     pub(crate) geo: GeoInfo,
 }
 
-#[allow(dead_code)]
-impl GenericServer {
-    pub fn server_type(&self) -> ServerType {
+impl ServerInfo for GenericServer {
+    fn server_type(&self) -> ServerType {
         self.server_type.clone()
     }
 
-    pub fn software_type(&self) -> SoftwareType {
+    fn software_type(&self) -> SoftwareType {
         self.software_type.clone()
     }
 
-    pub fn address(&self) -> String {
-        format!("{}:{}", self.ip, self.port)
-    }
-
-    pub fn ip(&self) -> &str {
+    fn ip(&self) -> &str {
         &self.ip
     }
 
-    pub fn port(&self) -> u16 {
+    fn port(&self) -> u16 {
         self.port
     }
+}
 
+#[allow(dead_code)]
+impl GenericServer {
     pub fn settings(&self) -> &Settings {
         &self.settings
     }
@@ -65,90 +60,5 @@ impl GenericServer {
     }
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
-    }
-
-    pub async fn try_from_address(address: &str, timeout: Duration) -> anyhow::Result<Self> {
-        let hostport = HostPort::try_from(address)?;
-        let status_res = svc_status::status_119(address, timeout).await?;
-
-        let qtv_stream = match status_res.qtv_stream() {
-            Some(qtv_stream) => {
-                let qtvusers_res = svc_qtvusers::qtvusers(address, timeout)
-                    .await
-                    .unwrap_or_default();
-                let client_names = qtvusers_res.client_names().as_slice();
-                Some(qtv_stream.with_client_names(client_names))
-            }
-            None => None,
-        };
-
-        let ip = resolve_host(hostport.host())?;
-        let version = status_res.settings().version.clone().unwrap_or_default();
-
-        Ok(GenericServer {
-            server_type: ServerType::from_version(&version),
-            software_type: SoftwareType::from_version(&version),
-            ip,
-            port: hostport.port(),
-            settings: status_res.settings().clone(),
-            clients: status_res.clients().cloned().collect(),
-            qtv_stream,
-            geo: GeoInfo::from(status_res.settings()),
-        })
-    }
-}
-
-#[cfg(test)]
-#[cfg_attr(coverage_nightly, coverage(off))]
-mod tests {
-    use super::*;
-    use crate::common::geo::Coords;
-    use anyhow::Result;
-    use pretty_assertions::assert_eq;
-    use std::net::{IpAddr, ToSocketAddrs};
-
-    #[tokio::test]
-    async fn test_try_from_address() -> Result<()> {
-        // invalid address
-        assert!(
-            GenericServer::try_from_address("foo.bar:666", Duration::from_millis(50))
-                .await
-                .is_err()
-        );
-
-        // valid address
-        {
-            let expected_ip = {
-                ("berlin2.qwsv.net", 0)
-                    .to_socket_addrs()?
-                    .find(|addr| matches!(addr.ip(), IpAddr::V4(_)))
-                    .map(|addr| addr.ip())
-                    .unwrap()
-            };
-            let timeout = Duration::from_secs_f32(0.5);
-            let server = GenericServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
-
-            assert_eq!(server.server_type(), ServerType::GameServer);
-            assert_eq!(server.software_type(), SoftwareType::Mvdsv);
-            assert_eq!(server.address(), format!("{expected_ip}:27500"));
-            assert_eq!(server.port(), 27500);
-            assert_eq!(server.ip(), expected_ip.to_string());
-
-            let settings = server.settings().clone();
-            assert!(settings.hostname.unwrap().starts_with("berlin2 KTX Server"));
-            assert!(server.qtv_stream().is_some());
-            assert_eq!(
-                server.geo(),
-                &GeoInfo {
-                    country_code: Some("DE".to_string()),
-                    city: Some("Berlin".to_string()),
-                    region: Some("Europe".to_string()),
-                    country_name: Some("Germany".to_string()),
-                    coords: Some(Coords::new(52.5200, 13.4050)),
-                }
-            );
-        }
-
-        Ok(())
     }
 }

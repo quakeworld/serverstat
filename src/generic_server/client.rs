@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 const PLAYER_MIN_PING: usize = 12;
 const PLAYER_MAX_PING: usize = 600;
 
+/// A client connected to a [`GenericServer`](crate::GenericServer).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GenericClient {

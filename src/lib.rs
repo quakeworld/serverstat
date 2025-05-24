@@ -16,7 +16,10 @@ pub use common::geo::{Coords, GeoInfo, GeoInfoBuilder};
 pub use common::server_type::ServerType;
 pub use common::software_type::SoftwareType;
 
+pub use generic_server::client::GenericClient;
 pub use generic_server::qtv_stream::QtvStream;
+pub use generic_server::query::query;
+pub use generic_server::server::GenericServer;
 
 pub use game_server::player::Player;
 pub use game_server::server::GameServer;
@@ -30,3 +33,7 @@ pub use proxy_server::settings::ProxySettings;
 pub use qtv_server::client::QtvClient;
 pub use qtv_server::server::QtvServer;
 pub use qtv_server::settings::QtvSettings;
+
+// public api with async support (optional)
+#[cfg(feature = "tokio")]
+pub use generic_server::query::query_async;

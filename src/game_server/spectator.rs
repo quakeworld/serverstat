@@ -1,4 +1,4 @@
-use crate::generic_server::client::GenericClient;
+use crate::GenericClient;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

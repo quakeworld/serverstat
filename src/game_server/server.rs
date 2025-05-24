@@ -1,24 +1,27 @@
-//! Game server (clients can connect as player or spectator)
 use super::team;
-use crate::generic_server::client::GenericClient;
-use crate::generic_server::server::GenericServer;
-use crate::{ClientSlots, GeoInfo, Player, QtvStream, Spectator, Team};
+use crate::generic_server::query::ServerInfo;
+use crate::{GenericClient, GenericServer};
+
+use crate::{ClientSlots, GeoInfo, Player, QtvStream, ServerType, SoftwareType, Spectator, Team};
 use quake_serverinfo::Settings;
 use quake_text::unicode;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// Represents a game server (a client can connect as [`Player`] or [`Spectator`]).
-#[derive(Clone, Debug, Default, PartialEq)]
+/// Represents a server where clients connect as [`Player`] or [`Spectator`].
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GameServer {
-    settings: Settings,
-    teams: Vec<Team>,
-    players: Vec<Player>,
-    spectators: Vec<Spectator>,
-    qtv_stream: Option<QtvStream>,
-    geo: GeoInfo,
+    pub(crate) software_type: SoftwareType,
+    pub(crate) ip: String,
+    pub(crate) port: u16,
+    pub(crate) settings: Settings,
+    pub(crate) teams: Vec<Team>,
+    pub(crate) players: Vec<Player>,
+    pub(crate) spectators: Vec<Spectator>,
+    pub(crate) qtv_stream: Option<QtvStream>,
+    pub(crate) geo: GeoInfo,
 }
 
 #[allow(dead_code)]
@@ -43,10 +46,6 @@ impl GameServer {
         self.qtv_stream.as_ref()
     }
 
-    pub fn geo(&self) -> &GeoInfo {
-        &self.geo
-    }
-
     pub fn player_slots(&self) -> ClientSlots {
         let used = self.players.len() as u32;
         let total = self.settings.maxclients.map(|v| v as u32).unwrap_or(used);
@@ -61,6 +60,27 @@ impl GameServer {
             .map(|v| v as u32)
             .unwrap_or(used);
         ClientSlots::new(used, total)
+    }
+
+    pub fn geo(&self) -> &GeoInfo {
+        &self.geo
+    }
+}
+
+impl ServerInfo for GameServer {
+    fn server_type(&self) -> ServerType {
+        ServerType::GameServer
+    }
+
+    fn software_type(&self) -> SoftwareType {
+        self.software_type.clone()
+    }
+
+    fn ip(&self) -> &str {
+        &self.ip
+    }
+    fn port(&self) -> u16 {
+        self.port
     }
 }
 
@@ -83,7 +103,10 @@ impl From<&GenericServer> for GameServer {
         };
 
         Self {
+            ip: server.ip().to_string(),
+            port: server.port(),
             settings: server.settings().clone(),
+            software_type: server.software_type(),
             teams,
             players,
             spectators,
@@ -104,7 +127,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
-    async fn test_from_gameserver() -> Result<()> {
+    async fn test_from_genericserver() -> Result<()> {
         let geo = GeoInfo {
             country_code: Some("US".to_string()),
             country_name: Some("United States".to_string()),

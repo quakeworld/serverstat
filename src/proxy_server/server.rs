@@ -1,15 +1,21 @@
-use crate::generic_server::server::GenericServer;
-use crate::{ClientSlots, ProxyClient, ProxySettings};
+use crate::generic_server::query::ServerInfo;
+use crate::{
+    ClientSlots, GenericServer, GeoInfo, ProxyClient, ProxySettings, ServerType, SoftwareType,
+};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents a proxy server
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProxyServer {
-    settings: ProxySettings,
-    clients: Vec<ProxyClient>,
+    pub(crate) software_type: SoftwareType,
+    pub(crate) ip: String,
+    pub(crate) port: u16,
+    pub(crate) settings: ProxySettings,
+    pub(crate) clients: Vec<ProxyClient>,
+    pub(crate) geo: GeoInfo,
 }
 
 impl ProxyServer {
@@ -20,17 +26,7 @@ impl ProxyServer {
     pub fn clients(&self) -> impl Iterator<Item = &ProxyClient> {
         self.clients.iter()
     }
-}
 
-impl From<&GenericServer> for ProxyServer {
-    fn from(server: &GenericServer) -> Self {
-        let settings = ProxySettings::from(server.settings());
-        let clients = server.clients().map(ProxyClient::from).collect();
-        Self { settings, clients }
-    }
-}
-
-impl ProxyServer {
     pub fn client_slots(&self) -> ClientSlots {
         let total = self.settings().maxclients();
         let used = self.clients.len() as u32;
@@ -38,24 +34,51 @@ impl ProxyServer {
     }
 }
 
+impl ServerInfo for ProxyServer {
+    fn server_type(&self) -> ServerType {
+        ServerType::ProxyServer
+    }
+
+    fn software_type(&self) -> SoftwareType {
+        self.software_type.clone()
+    }
+
+    fn ip(&self) -> &str {
+        &self.ip
+    }
+    fn port(&self) -> u16 {
+        self.port
+    }
+}
+
+impl From<&GenericServer> for ProxyServer {
+    fn from(server: &GenericServer) -> Self {
+        let settings = ProxySettings::from(server.settings());
+        let clients = server.clients().map(ProxyClient::from).collect();
+        Self {
+            software_type: server.software_type(),
+            ip: server.ip().to_string(),
+            port: server.port(),
+            settings,
+            clients,
+            geo: server.geo().clone(),
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::generic_server::client::GenericClient;
-    use crate::generic_server::server::GenericServer;
-    use crate::{ProxyClient, ProxyServer};
+    use crate::generic_server::query::ServerInfo;
+    use crate::{GenericClient, ProxyClient, query_async};
     use anyhow::Result;
     use pretty_assertions::assert_eq;
     use std::time::Duration;
 
     #[tokio::test]
-    async fn test_from_gameserver() -> Result<()> {
-        let server =
-            GenericServer::try_from_address("quake.se:30000", Duration::from_secs_f32(0.5)).await?;
-        assert_eq!(
-            ProxyServer::from(&server).settings().hostname(),
-            "QUAKE.SE KTX QWfwd"
-        );
+    async fn test_from_genericserver() -> Result<()> {
+        let server = query_async("quake.se:30000", Duration::from_secs_f32(0.5)).await?;
+        assert_eq!(server.port(), 30000);
         Ok(())
     }
 

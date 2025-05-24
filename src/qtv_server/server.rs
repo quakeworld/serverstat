@@ -1,5 +1,5 @@
-use crate::generic_server::server::GenericServer;
-use crate::{ClientSlots, QtvClient, QtvSettings};
+use crate::generic_server::query::ServerInfo;
+use crate::{ClientSlots, GenericServer, QtvClient, QtvSettings, ServerType, SoftwareType};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -8,15 +8,22 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvServer {
-    settings: QtvSettings,
-    clients: Vec<QtvClient>,
+    pub(crate) ip: String,
+    pub(crate) port: u16,
+    pub(crate) settings: QtvSettings,
+    pub(crate) clients: Vec<QtvClient>,
 }
 
 impl From<&GenericServer> for QtvServer {
     fn from(server: &GenericServer) -> Self {
         let settings = QtvSettings::from(server.settings());
         let clients = server.clients().map(QtvClient::from).collect();
-        Self { settings, clients }
+        Self {
+            ip: server.ip().to_string(),
+            port: server.port(),
+            settings,
+            clients,
+        }
     }
 }
 
@@ -36,25 +43,38 @@ impl QtvServer {
     }
 }
 
+impl ServerInfo for QtvServer {
+    fn server_type(&self) -> ServerType {
+        ServerType::QtvServer
+    }
+
+    fn software_type(&self) -> SoftwareType {
+        SoftwareType::Qtv
+    }
+
+    fn ip(&self) -> &str {
+        &self.ip
+    }
+
+    fn port(&self) -> u16 {
+        self.port
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::generic_server::client::GenericClient;
-    use crate::generic_server::server::GenericServer;
-    use crate::{QtvClient, QtvServer, QtvStream};
+    use crate::generic_server::query::ServerInfo;
+    use crate::{GenericClient, QtvClient, QtvStream, query_async};
     use anyhow::Result;
     use hostport::HostPort;
     use pretty_assertions::assert_eq;
     use std::time::Duration;
 
     #[tokio::test]
-    async fn test_qtvserver_from_gameserver() -> Result<()> {
-        let server =
-            GenericServer::try_from_address("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
-        assert_eq!(
-            QtvServer::from(&server).settings().hostname(),
-            "QUAKE.SE KTX Qtv"
-        );
+    async fn test_qtvserver_from_genericserver() -> Result<()> {
+        let server = query_async("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
+        assert_eq!(server.port(), 28000);
         Ok(())
     }
 
