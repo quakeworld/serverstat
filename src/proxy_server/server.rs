@@ -1,7 +1,5 @@
-use crate::common::client_slots::ClientSlots;
-use crate::proxy::client::ProxyClient;
-use crate::proxy::settings::ProxySettings;
-use crate::server::quake_server::QuakeServer;
+use crate::generic_server::server::GenericServer;
+use crate::{ClientSlots, ProxyClient, ProxySettings};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -23,8 +21,8 @@ impl ProxyServer {
     }
 }
 
-impl From<&QuakeServer> for ProxyServer {
-    fn from(server: &QuakeServer) -> Self {
+impl From<&GenericServer> for ProxyServer {
+    fn from(server: &GenericServer) -> Self {
         let settings = ProxySettings::from(server.settings());
         let clients = server.clients().map(ProxyClient::from).collect();
         Self { settings, clients }
@@ -42,10 +40,9 @@ impl ProxyServer {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::proxy::client::ProxyClient;
-    use crate::proxy::server::ProxyServer;
-    use crate::server::quake_client::QuakeClient;
-    use crate::server::quake_server::QuakeServer;
+    use crate::generic_server::client::GenericClient;
+    use crate::generic_server::server::GenericServer;
+    use crate::{ProxyClient, ProxyServer};
     use anyhow::Result;
     use pretty_assertions::assert_eq;
     use std::time::Duration;
@@ -53,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn test_from_gameserver() -> Result<()> {
         let server =
-            QuakeServer::try_from_address("quake.se:30000", Duration::from_secs_f32(0.5)).await?;
+            GenericServer::try_from_address("quake.se:30000", Duration::from_secs_f32(0.5)).await?;
         assert_eq!(
             ProxyServer::from(&server).settings().hostname(),
             "QUAKE.SE KTX QWfwd"
@@ -64,7 +61,7 @@ mod tests {
     #[test]
     fn test_from_quakeclient() {
         assert_eq!(
-            ProxyClient::from(&QuakeClient {
+            ProxyClient::from(&GenericClient {
                 id: 7,
                 name: "XantoM".to_string(),
                 team: "f0m".to_string(),

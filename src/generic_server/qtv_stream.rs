@@ -1,4 +1,4 @@
-use crate::util::tokenize;
+use super::tokenize::tokenize;
 use hostport::HostPort;
 use quake_text::bytestr::to_unicode;
 
@@ -65,7 +65,7 @@ impl TryFrom<&[u8]> for QtvStream {
     type Error = anyhow::Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let parts: Vec<String> = tokenize::tokenize(to_unicode(bytes).as_str());
+        let parts: Vec<String> = tokenize(to_unicode(bytes).as_str());
         let id = parts[1].parse::<u32>().unwrap_or_default();
         let name = parts[2].to_string();
         let url = parts[3].to_string();

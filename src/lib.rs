@@ -5,15 +5,28 @@
 
 // internal modules
 pub(crate) mod common;
-pub(crate) mod util;
+pub(crate) mod game_server;
+pub(crate) mod generic_server;
+pub(crate) mod proxy_server;
+pub(crate) mod qtv_server;
 
 // public api
-pub mod game_server;
-pub mod proxy;
-pub mod qtv;
-pub mod server;
-
 pub use common::client_slots::ClientSlots;
 pub use common::geo::{Coords, GeoInfo, GeoInfoBuilder};
 pub use common::server_type::ServerType;
 pub use common::software_type::SoftwareType;
+
+pub use generic_server::qtv_stream::QtvStream;
+
+pub use game_server::player::Player;
+pub use game_server::server::GameServer;
+pub use game_server::spectator::Spectator;
+pub use game_server::team::Team;
+
+pub use proxy_server::client::ProxyClient;
+pub use proxy_server::server::ProxyServer;
+pub use proxy_server::settings::ProxySettings;
+
+pub use qtv_server::client::QtvClient;
+pub use qtv_server::server::QtvServer;
+pub use qtv_server::settings::QtvSettings;

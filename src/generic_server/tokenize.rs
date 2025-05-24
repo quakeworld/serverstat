@@ -1,4 +1,4 @@
-pub fn tokenize(value: &str) -> Vec<String> {
+pub(super) fn tokenize(value: &str) -> Vec<String> {
     let mut tokens: Vec<String> = vec![];
     let mut in_quote = false;
     let mut current_token = "".to_string();

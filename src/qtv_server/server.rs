@@ -1,7 +1,5 @@
-use crate::common::client_slots::ClientSlots;
-use crate::qtv::client::QtvClient;
-use crate::qtv::settings::QtvSettings;
-use crate::server::quake_server::QuakeServer;
+use crate::generic_server::server::GenericServer;
+use crate::{ClientSlots, QtvClient, QtvSettings};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -13,8 +11,8 @@ pub struct QtvServer {
     clients: Vec<QtvClient>,
 }
 
-impl From<&QuakeServer> for QtvServer {
-    fn from(server: &QuakeServer) -> Self {
+impl From<&GenericServer> for QtvServer {
+    fn from(server: &GenericServer) -> Self {
         let settings = QtvSettings::from(server.settings());
         let clients = server.clients().map(QtvClient::from).collect();
         Self { settings, clients }
@@ -40,11 +38,9 @@ impl QtvServer {
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::qtv::client::QtvClient;
-    use crate::qtv::server::QtvServer;
-    use crate::server::qtv_stream::QtvStream;
-    use crate::server::quake_client::QuakeClient;
-    use crate::server::quake_server::QuakeServer;
+    use crate::generic_server::client::GenericClient;
+    use crate::generic_server::server::GenericServer;
+    use crate::{QtvClient, QtvServer, QtvStream};
     use anyhow::Result;
     use hostport::HostPort;
     use pretty_assertions::assert_eq;
@@ -53,7 +49,7 @@ mod tests {
     #[tokio::test]
     async fn test_qtvserver_from_gameserver() -> Result<()> {
         let server =
-            QuakeServer::try_from_address("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
+            GenericServer::try_from_address("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
         assert_eq!(
             QtvServer::from(&server).settings().hostname(),
             "QUAKE.SE KTX Qtv"
@@ -91,7 +87,7 @@ mod tests {
     #[test]
     fn test_qtvclient_from_quakeclient() {
         assert_eq!(
-            QtvClient::from(&QuakeClient {
+            QtvClient::from(&GenericClient {
                 id: 7,
                 name: "XantoM".to_string(),
                 team: "f0m".to_string(),

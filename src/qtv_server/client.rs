@@ -1,28 +1,18 @@
-use crate::server::quake_client::QuakeClient;
+use crate::generic_server::client::GenericClient;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ProxyClient {
+pub struct QtvClient {
     pub(super) id: u32,
     pub(super) time: u32,
     pub(super) name: String,
 }
 
-impl From<&QuakeClient> for ProxyClient {
-    fn from(client: &QuakeClient) -> Self {
-        Self {
-            id: client.id(),
-            time: client.time(),
-            name: client.name().to_string(),
-        }
-    }
-}
-
 #[allow(dead_code)]
-impl ProxyClient {
+impl QtvClient {
     pub fn id(&self) -> u32 {
         self.id
     }
@@ -36,14 +26,24 @@ impl ProxyClient {
     }
 }
 
+impl From<&GenericClient> for QtvClient {
+    fn from(client: &GenericClient) -> Self {
+        Self {
+            id: client.id(),
+            time: client.time(),
+            name: client.name().to_string(),
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_proxyclient_from_quakeclient() {
-        let client = ProxyClient::from(&QuakeClient {
+    fn test_qtvclient_from_quakeclient() {
+        let client: QtvClient = QtvClient::from(&GenericClient {
             id: 1,
             name: "TestClient".to_string(),
             time: 100,

@@ -1,11 +1,7 @@
-use super::qtv_stream::QtvStream;
-use super::quake_client::QuakeClient;
+use super::net_resolve::resolve_host;
 use super::svc_status;
-use crate::common::geo::GeoInfo;
-use crate::common::server_type::ServerType;
-use crate::common::software_type::SoftwareType;
-use crate::server::svc_qtvusers;
-use crate::util::net_extra;
+use super::{client::GenericClient, svc_qtvusers};
+use crate::{GeoInfo, QtvStream, ServerType, SoftwareType};
 use hostport::HostPort;
 pub use quake_serverinfo::Settings;
 use std::time::Duration;
@@ -15,19 +11,19 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct QuakeServer {
+pub struct GenericServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
     pub(crate) ip: String,
     pub(crate) port: u16,
     pub(crate) settings: Settings,
-    pub(crate) clients: Vec<QuakeClient>,
+    pub(crate) clients: Vec<GenericClient>,
     pub(crate) qtv_stream: Option<QtvStream>,
     pub(crate) geo: GeoInfo,
 }
 
 #[allow(dead_code)]
-impl QuakeServer {
+impl GenericServer {
     pub fn server_type(&self) -> ServerType {
         self.server_type.clone()
     }
@@ -52,15 +48,15 @@ impl QuakeServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> impl Iterator<Item = &QuakeClient> {
+    pub fn clients(&self) -> impl Iterator<Item = &GenericClient> {
         self.clients.iter()
     }
 
-    pub fn players(&self) -> impl Iterator<Item = &QuakeClient> {
+    pub fn players(&self) -> impl Iterator<Item = &GenericClient> {
         self.clients().filter(|client| !client.is_spectator())
     }
 
-    pub fn spectators(&self) -> impl Iterator<Item = &QuakeClient> {
+    pub fn spectators(&self) -> impl Iterator<Item = &GenericClient> {
         self.clients().filter(|client| client.is_spectator())
     }
 
@@ -86,10 +82,10 @@ impl QuakeServer {
             None => None,
         };
 
-        let ip = net_extra::resolve_host(hostport.host())?;
+        let ip = resolve_host(hostport.host())?;
         let version = status_res.settings().version.clone().unwrap_or_default();
 
-        Ok(QuakeServer {
+        Ok(GenericServer {
             server_type: ServerType::from_version(&version),
             software_type: SoftwareType::from_version(&version),
             ip,
@@ -115,7 +111,7 @@ mod tests {
     async fn test_try_from_address() -> Result<()> {
         // invalid address
         assert!(
-            QuakeServer::try_from_address("foo.bar:666", Duration::from_millis(50))
+            GenericServer::try_from_address("foo.bar:666", Duration::from_millis(50))
                 .await
                 .is_err()
         );
@@ -130,7 +126,7 @@ mod tests {
                     .unwrap()
             };
             let timeout = Duration::from_secs_f32(0.5);
-            let server = QuakeServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
+            let server = GenericServer::try_from_address("berlin2.qwsv.net:27500", timeout).await?;
 
             assert_eq!(server.server_type(), ServerType::GameServer);
             assert_eq!(server.software_type(), SoftwareType::Mvdsv);

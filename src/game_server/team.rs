@@ -1,5 +1,5 @@
 //! Team: a collection of Players
-use crate::game_server::player::Player;
+use crate::Player;
 use quake_text::unicode;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -50,7 +50,7 @@ struct TempTeam {
     colors: Vec<(u8, u8)>,
 }
 
-pub fn players_to_teams(players: &[Player]) -> Vec<Team> {
+pub(super) fn teams_from_players(players: &[Player]) -> Vec<Team> {
     let mut temp: HashMap<String, TempTeam> = HashMap::new();
 
     for player in players {
@@ -161,7 +161,7 @@ mod tests {
             },
         ];
 
-        let teams = players_to_teams(&clients);
+        let teams = teams_from_players(&clients);
         assert_eq!(teams.len(), 2);
 
         assert_eq!(

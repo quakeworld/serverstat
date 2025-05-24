@@ -1,5 +1,5 @@
-use crate::server::qtv_stream::QtvStream;
-use crate::server::quake_client::QuakeClient;
+use crate::generic_server::client::GenericClient;
+use crate::generic_server::qtv_stream::QtvStream;
 use anyhow::Result;
 use quake_serverinfo::Settings;
 use std::io::{BufRead, Cursor};
@@ -7,7 +7,7 @@ use std::time::Duration;
 use thiserror::Error;
 
 /// Sends a `status 119` query to the specified address and returns the parsed response.
-pub async fn status_119(
+pub(super) async fn status_119(
     address: &str,
     timeout: Duration,
 ) -> Result<Status119Response, Status119ResponseError> {
@@ -32,11 +32,11 @@ pub async fn status_119(
 
 /// Represents the response to a `status 119` query.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Status119Response {
+pub(super) struct Status119Response {
     /// Server settings parsed from the response.
     settings: Settings,
     /// List of connected clients.
-    clients: Vec<QuakeClient>,
+    clients: Vec<GenericClient>,
     /// Optional QTV stream information.
     qtv_stream: Option<QtvStream>,
 }
@@ -47,7 +47,7 @@ impl Status119Response {
         &self.settings
     }
 
-    pub fn clients(&self) -> impl Iterator<Item = &QuakeClient> {
+    pub fn clients(&self) -> impl Iterator<Item = &GenericClient> {
         self.clients.iter()
     }
 
@@ -81,13 +81,13 @@ impl TryFrom<&[u8]> for Status119Response {
         let settings = quake_serverinfo::Settings::from(rows[0].as_slice());
 
         // parse clients and additional info
-        let mut clients: Vec<QuakeClient> = vec![];
+        let mut clients: Vec<GenericClient> = vec![];
         let mut qtv_stream: Option<QtvStream> = None;
 
         for row in rows {
             if row.starts_with(b"qtv ") {
                 qtv_stream = QtvStream::try_from(row.as_slice()).ok();
-            } else if let Ok(client) = QuakeClient::try_from(row.as_slice()) {
+            } else if let Ok(client) = GenericClient::try_from(row.as_slice()) {
                 clients.push(client);
             }
         }
@@ -207,7 +207,7 @@ mod tests {
                 assert_eq!(
                     res.clients,
                     vec![
-                        QuakeClient {
+                        GenericClient {
                             id: 75,
                             frags: 11,
                             ping: 25,
@@ -221,7 +221,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 80,
                             frags: 2,
                             ping: 13,
@@ -235,7 +235,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 84,
                             frags: 4,
                             ping: 51,
@@ -249,7 +249,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 78,
                             frags: 0,
                             ping: 56,
@@ -263,7 +263,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 79,
                             frags: 0,
                             ping: 38,
@@ -277,7 +277,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 81,
                             frags: 0,
                             ping: 38,
@@ -291,7 +291,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 85,
                             frags: 3,
                             ping: 45,
@@ -305,7 +305,7 @@ mod tests {
                             is_bot: false,
                             auth_cc: "".to_string(),
                         },
-                        QuakeClient {
+                        GenericClient {
                             id: 86,
                             frags: 0,
                             ping: 666,

@@ -1,5 +1,5 @@
 //! Generic client connected to a server (client, player, spectator)
-use crate::util::tokenize;
+use super::tokenize::tokenize;
 use anyhow::Result;
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;
@@ -12,7 +12,7 @@ const PLAYER_MAX_PING: usize = 600;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct QuakeClient {
+pub struct GenericClient {
     pub(crate) id: u32,
     pub(crate) name: String,
     pub(crate) team: String,
@@ -27,11 +27,11 @@ pub struct QuakeClient {
     pub(crate) is_bot: bool,
 }
 
-impl TryFrom<&[u8]> for QuakeClient {
+impl TryFrom<&[u8]> for GenericClient {
     type Error = anyhow::Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let parts: Vec<String> = tokenize::tokenize(bytestr::to_unicode(bytes).as_str());
+        let parts: Vec<String> = tokenize(bytestr::to_unicode(bytes).as_str());
         let id: u32 = parts[0].parse()?;
         let mut frags: i32 = parts[1].parse()?;
         let time: u32 = parts[2].parse()?;
@@ -73,19 +73,19 @@ impl TryFrom<&[u8]> for QuakeClient {
     }
 }
 
-impl PartialOrd for QuakeClient {
+impl PartialOrd for GenericClient {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for QuakeClient {
+impl Ord for GenericClient {
     fn cmp(&self, other: &Self) -> Ordering {
         unicode::ord(&self.name, &other.name)
     }
 }
 
-impl QuakeClient {
+impl GenericClient {
     pub fn id(&self) -> u32 {
         self.id
     }
@@ -144,20 +144,20 @@ mod tests {
     #[test]
     fn test_try_from_bytes() -> Result<()> {
         // invalid input
-        assert!(QuakeClient::try_from(br#"a 0 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid id
-        assert!(QuakeClient::try_from(br#"0 a 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid frags
-        assert!(QuakeClient::try_from(br#"0 0 a 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid time
-        assert!(QuakeClient::try_from(br#"0 0 0 a "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid ping
-        assert!(QuakeClient::try_from(br#"0 0 0 0 "name" "" a 4 "sk" """#.as_slice()).is_err()); // invalid top_color
-        assert!(QuakeClient::try_from(br#"0 0 0 0 "name" "" 4 a "sk" """#.as_slice()).is_err()); // invalid bottom_color
+        assert!(GenericClient::try_from(br#"a 0 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid id
+        assert!(GenericClient::try_from(br#"0 a 0 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid frags
+        assert!(GenericClient::try_from(br#"0 0 a 0 "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid time
+        assert!(GenericClient::try_from(br#"0 0 0 a "name" "" 4 4 "sk" """#.as_slice()).is_err()); // invalid ping
+        assert!(GenericClient::try_from(br#"0 0 0 0 "name" "" a 4 "sk" """#.as_slice()).is_err()); // invalid top_color
+        assert!(GenericClient::try_from(br#"0 0 0 0 "name" "" 4 a "sk" """#.as_slice()).is_err()); // invalid bottom_color
 
         // player
         {
             let bytes = br#"63 43 41 25 "Player" "" 4 4 "red" """#;
-            let client = QuakeClient::try_from(bytes.as_slice())?;
+            let client = GenericClient::try_from(bytes.as_slice())?;
             assert_eq!(
                 client,
-                QuakeClient {
+                GenericClient {
                     id: 63,
                     name: "Player".to_string(),
                     team: "red".to_string(),
@@ -178,10 +178,10 @@ mod tests {
         // spectator
         {
             let bytes = br#"74 -9999 3 -33 "\s\ razor" "8" 3 11 "sr" """#.as_slice();
-            let client = QuakeClient::try_from(bytes)?;
+            let client = GenericClient::try_from(bytes)?;
             assert_eq!(
                 client,
-                QuakeClient {
+                GenericClient {
                     id: 74,
                     name: " razor".to_string(),
                     team: "sr".to_string(),
@@ -202,10 +202,10 @@ mod tests {
         // qtv/qwfwd client
         {
             let bytes = br#"1446 0 32 64 "Zepp" "" 0 0"#;
-            let client = QuakeClient::try_from(bytes.as_slice())?;
+            let client = GenericClient::try_from(bytes.as_slice())?;
             assert_eq!(
                 client,
-                QuakeClient {
+                GenericClient {
                     id: 1446,
                     name: "Zepp".to_string(),
                     team: "".to_string(),
@@ -227,19 +227,19 @@ mod tests {
     #[test]
     fn test_cmp() {
         let mut clients = vec![
-            QuakeClient {
+            GenericClient {
                 name: "foo".to_string(),
                 ..Default::default()
             },
-            QuakeClient {
+            GenericClient {
                 name: "áøå2".to_string(),
                 ..Default::default()
             },
-            QuakeClient {
+            GenericClient {
                 name: "axe".to_string(),
                 ..Default::default()
             },
-            QuakeClient {
+            GenericClient {
                 name: "B".to_string(),
                 ..Default::default()
             },

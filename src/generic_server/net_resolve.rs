@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow as e};
 use std::net::{SocketAddr, ToSocketAddrs};
 
 /// Resolves a hostname or IP string to an IPv4 address.
-pub fn resolve_host(host: &str) -> Result<String> {
+pub(super) fn resolve_host(host: &str) -> Result<String> {
     (host, 0)
         .to_socket_addrs()
         .map_err(|_| e!("Failed to resolve '{}' to an IPv4 address.", host))?

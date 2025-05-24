@@ -1,4 +1,4 @@
-use crate::util::tokenize::tokenize;
+use super::tokenize::tokenize;
 use anyhow::Result;
 use quake_text::bytestr;
 use std::time::Duration;

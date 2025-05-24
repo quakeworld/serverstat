@@ -1,4 +1,4 @@
-use crate::server::quake_client::QuakeClient;
+use crate::generic_server::client::GenericClient;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -12,8 +12,8 @@ pub struct Spectator {
     is_bot: bool,
 }
 
-impl From<&QuakeClient> for Spectator {
-    fn from(client: &QuakeClient) -> Self {
+impl From<&GenericClient> for Spectator {
+    fn from(client: &GenericClient) -> Self {
         Self {
             id: client.id(),
             name: client.name().to_string(),
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_specator_from_quakeclient() {
-        let spectator = Spectator::from(&QuakeClient {
+        let spectator = Spectator::from(&GenericClient {
             id: 7,
             name: "XantoM".to_string(),
             team: "f0m".to_string(),

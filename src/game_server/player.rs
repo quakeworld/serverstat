@@ -1,4 +1,4 @@
-use crate::server::quake_client::QuakeClient;
+use crate::generic_server::client::GenericClient;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -19,8 +19,8 @@ pub struct Player {
     pub(super) is_bot: bool,
 }
 
-impl From<&QuakeClient> for Player {
-    fn from(client: &QuakeClient) -> Self {
+impl From<&GenericClient> for Player {
+    fn from(client: &GenericClient) -> Self {
         Self {
             id: client.id(),
             name: client.name().to_string(),
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_player_from_quakeclient() {
-        let player = Player::from(&QuakeClient {
+        let player = Player::from(&GenericClient {
             id: 7,
             name: "XantoM".to_string(),
             team: "f0m".to_string(),

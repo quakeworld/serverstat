@@ -1,10 +1,8 @@
 //! Game server (clients can connect as player or spectator)
-use crate::common::client_slots::ClientSlots;
-use crate::common::geo::GeoInfo;
-use crate::game_server::{player::Player, spectator::Spectator, team, team::Team};
-use crate::server::qtv_stream::QtvStream;
-use crate::server::quake_client::QuakeClient;
-use crate::server::quake_server::QuakeServer;
+use super::team;
+use crate::generic_server::client::GenericClient;
+use crate::generic_server::server::GenericServer;
+use crate::{ClientSlots, GeoInfo, Player, QtvStream, Spectator, Team};
 use quake_serverinfo::Settings;
 use quake_text::unicode;
 
@@ -65,9 +63,9 @@ impl GameServer {
     }
 }
 
-impl From<&QuakeServer> for GameServer {
-    fn from(server: &QuakeServer) -> Self {
-        let mut clients: Vec<QuakeClient> = server.clients().cloned().collect();
+impl From<&GenericServer> for GameServer {
+    fn from(server: &GenericServer) -> Self {
+        let mut clients: Vec<GenericClient> = server.clients().cloned().collect();
         clients.sort();
 
         let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
@@ -79,7 +77,7 @@ impl From<&QuakeServer> for GameServer {
 
         let spectators: Vec<Spectator> = server.spectators().map(Spectator::from).collect();
         let teams = match is_teamplay {
-            true => team::players_to_teams(&players),
+            true => team::teams_from_players(&players),
             _ => vec![],
         };
 
@@ -113,7 +111,7 @@ mod tests {
             region: Some("North America".to_string()),
             coords: Some(Coords::new(40.7128, -74.0060)),
         };
-        let server = GameServer::from(&QuakeServer {
+        let server = GameServer::from(&GenericServer {
             server_type: ServerType::GameServer,
             software_type: SoftwareType::Mvdsv,
             ip: "10.10.10.10".to_string(),
@@ -126,19 +124,19 @@ mod tests {
                 ..Default::default()
             },
             clients: vec![
-                QuakeClient {
+                GenericClient {
                     name: "Player1".to_string(),
                     team: "red".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
-                QuakeClient {
+                GenericClient {
                     name: "Player2".to_string(),
                     team: "blue".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
-                QuakeClient {
+                GenericClient {
                     name: "Spectator1".to_string(),
                     is_spectator: true,
                     ..Default::default()
