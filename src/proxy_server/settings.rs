@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_proxysettings_from_settings() {
-        let settings = Settings {
+        let proxy_settings = ProxySettings::from(&Settings {
             hostname: Some("Test Server".to_string()),
             maxclients: Some(16),
             version: Some("QWFWD 1.0".to_string()),
@@ -77,8 +77,7 @@ mod tests {
             countrycode: Some("TC".to_string()),
             hostport: Some("test.server:28000".to_string()),
             ..Default::default()
-        };
-        let proxy_settings = ProxySettings::from(&settings);
+        });
         assert_eq!(proxy_settings.hostname(), "Test Server");
         assert_eq!(proxy_settings.maxclients(), 16);
         assert_eq!(proxy_settings.version(), "QWFWD 1.0");

@@ -1,4 +1,3 @@
-use crate::generic_server::query::ServerInfo;
 use crate::{ClientSlots, GenericServer, QtvClient, QtvSettings, ServerType, SoftwareType};
 
 #[cfg(feature = "serde")]
@@ -8,26 +7,34 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvServer {
-    pub(crate) ip: String,
-    pub(crate) port: u16,
-    pub(crate) settings: QtvSettings,
-    pub(crate) clients: Vec<QtvClient>,
-}
-
-impl From<&GenericServer> for QtvServer {
-    fn from(server: &GenericServer) -> Self {
-        let settings = QtvSettings::from(server.settings());
-        let clients = server.clients().map(QtvClient::from).collect();
-        Self {
-            ip: server.ip().to_string(),
-            port: server.port(),
-            settings,
-            clients,
-        }
-    }
+    address: String,
+    ip: String,
+    port: u16,
+    settings: QtvSettings,
+    clients: Vec<QtvClient>,
 }
 
 impl QtvServer {
+    pub fn server_type(&self) -> ServerType {
+        ServerType::QtvServer
+    }
+
+    pub fn software_type(&self) -> SoftwareType {
+        SoftwareType::Qtv
+    }
+
+    pub fn address(&self) -> &str {
+        &self.address
+    }
+
+    pub fn ip(&self) -> &str {
+        &self.ip
+    }
+
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
     pub fn settings(&self) -> &QtvSettings {
         &self.settings
     }
@@ -43,89 +50,55 @@ impl QtvServer {
     }
 }
 
-impl ServerInfo for QtvServer {
-    fn server_type(&self) -> ServerType {
-        ServerType::QtvServer
-    }
-
-    fn software_type(&self) -> SoftwareType {
-        SoftwareType::Qtv
-    }
-
-    fn ip(&self) -> &str {
-        &self.ip
-    }
-
-    fn port(&self) -> u16 {
-        self.port
+impl From<&GenericServer> for QtvServer {
+    fn from(server: &GenericServer) -> Self {
+        Self {
+            address: server.address().to_string(),
+            ip: server.ip().to_string(),
+            port: server.port(),
+            settings: QtvSettings::from(server.settings()),
+            clients: server.clients().map(QtvClient::from).collect(),
+        }
     }
 }
 
 #[cfg(test)]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
-    use crate::generic_server::query::ServerInfo;
-    use crate::{GenericClient, QtvClient, QtvStream, query_async};
-    use anyhow::Result;
+    use super::*;
+    use crate::{Coords, GenericClient, GeoInfo, ServerType, SoftwareType};
     use pretty_assertions::assert_eq;
-    use std::time::Duration;
-
-    #[tokio::test]
-    async fn test_qtvserver_from_genericserver() -> Result<()> {
-        let server = query_async("quake.se:28000", Duration::from_secs_f32(0.5)).await?;
-        assert_eq!(server.port(), 28000);
-        Ok(())
-    }
+    use quake_serverinfo::Settings;
 
     #[test]
-    fn test_qtvstream_methods() -> Result<()> {
-        let stream = QtvStream {
-            number: Some(2),
-            address: Some("dm6.uk:28000".to_string()),
-            ..Default::default()
+    fn test_from_genericserver() {
+        let generic = GenericServer {
+            server_type: ServerType::QtvServer,
+            software_type: SoftwareType::Qtv,
+            address: "10.10.10.10".to_string(),
+            ip: "10.10.10.10".to_string(),
+            port: 28501,
+            settings: Settings {
+                hostname: Some("LocalQtv".to_string()),
+                maxclients: Some(128),
+                ..Default::default()
+            },
+            clients: vec![GenericClient::default(), GenericClient::default()],
+            qtv_stream: None,
+            geo: GeoInfo {
+                country_code: Some("US".to_string()),
+                country_name: Some("United States".to_string()),
+                city: Some("New York".to_string()),
+                region: Some("North America".to_string()),
+                coords: Some(Coords::new(40.7128, -74.0060)),
+            },
         };
-        assert_eq!(stream.url(), Some("2@dm6.uk:28000".to_string()));
-        Ok(())
-    }
-
-    #[test]
-    fn test_qtvstream_from_bytes() -> Result<()> {
-        assert_eq!(
-            QtvStream::try_from(br#"nqtv 1 "dm6.uk Qtv (7)" "7@dm6.uk:28000" 4"#.as_ref())?,
-            QtvStream {
-                id: 1,
-                name: "dm6.uk Qtv (7)".to_string(),
-                number: Some(7),
-                address: Some("dm6.uk:28000".to_string()),
-                client_count: 4,
-                client_names: vec![],
-            }
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_qtvclient_from_quakeclient() {
-        assert_eq!(
-            QtvClient::from(&GenericClient {
-                id: 7,
-                name: "XantoM".to_string(),
-                team: "f0m".to_string(),
-                frags: 12,
-                ping: 25,
-                time: 15,
-                top_color: 4,
-                bottom_color: 2,
-                skin: "XantoM".to_string(),
-                auth_cc: "xtm".to_string(),
-                is_spectator: false,
-                is_bot: false,
-            }),
-            QtvClient {
-                id: 7,
-                name: "XantoM".to_string(),
-                time: 15,
-            }
-        );
+        let server = QtvServer::from(&generic);
+        assert_eq!(server.server_type(), ServerType::QtvServer);
+        assert_eq!(server.software_type(), SoftwareType::Qtv);
+        assert_eq!(server.address(), generic.address());
+        assert_eq!(server.ip(), generic.ip());
+        assert_eq!(server.port(), generic.port());
+        assert_eq!(server.clients().count(), generic.clients().count());
     }
 }

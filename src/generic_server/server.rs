@@ -1,4 +1,3 @@
-use super::query::ServerInfo;
 use crate::{GenericClient, GeoInfo, QtvStream, ServerType, SoftwareType};
 pub use quake_serverinfo::Settings;
 
@@ -11,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct GenericServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
+    pub(crate) address: String,
     pub(crate) ip: String,
     pub(crate) port: u16,
     pub(crate) settings: Settings,
@@ -19,26 +19,28 @@ pub struct GenericServer {
     pub(crate) geo: GeoInfo,
 }
 
-impl ServerInfo for GenericServer {
-    fn server_type(&self) -> ServerType {
+#[allow(dead_code)]
+impl GenericServer {
+    pub fn server_type(&self) -> ServerType {
         self.server_type.clone()
     }
 
-    fn software_type(&self) -> SoftwareType {
+    pub fn software_type(&self) -> SoftwareType {
         self.software_type.clone()
     }
 
-    fn ip(&self) -> &str {
+    pub fn address(&self) -> &str {
+        &self.address
+    }
+
+    pub fn ip(&self) -> &str {
         &self.ip
     }
 
-    fn port(&self) -> u16 {
+    pub fn port(&self) -> u16 {
         self.port
     }
-}
 
-#[allow(dead_code)]
-impl GenericServer {
     pub fn settings(&self) -> &Settings {
         &self.settings
     }

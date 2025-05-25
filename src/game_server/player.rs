@@ -92,7 +92,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_player_from_quakeclient() {
+    fn test_player_from_genericclient() {
         let player = Player::from(&GenericClient {
             id: 7,
             name: "XantoM".to_string(),

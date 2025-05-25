@@ -50,7 +50,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_specator_from_quakeclient() {
+    fn test_specator_from_genericclient() {
         let spectator = Spectator::from(&GenericClient {
             id: 7,
             name: "XantoM".to_string(),

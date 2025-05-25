@@ -44,13 +44,12 @@ mod tests {
 
     #[test]
     fn test_qtvsettings_from_settings() {
-        let settings = Settings {
+        let qtv_settings = QtvSettings::from(&Settings {
             hostname: Some("Test Server".to_string()),
             maxclients: Some(16),
             version: Some("QTV 1.0".to_string()),
             ..Default::default()
-        };
-        let qtv_settings = QtvSettings::from(&settings);
+        });
         assert_eq!(qtv_settings.hostname(), "Test Server");
         assert_eq!(qtv_settings.maxclients(), 16);
         assert_eq!(qtv_settings.version(), "QTV 1.0");

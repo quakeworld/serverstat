@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_qtvclient_from_quakeclient() {
-        let client: QtvClient = QtvClient::from(&GenericClient {
+        let client = QtvClient::from(&GenericClient {
             id: 1,
             name: "TestClient".to_string(),
             time: 100,

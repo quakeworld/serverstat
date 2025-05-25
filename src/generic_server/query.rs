@@ -15,7 +15,7 @@ pub enum Server {
     Generic(GenericServer),
 }
 
-impl ServerInfo for Server {
+impl Server {
     fn server_type(&self) -> ServerType {
         match self {
             Server::Proxy(_) => ServerType::ProxyServer,
@@ -52,26 +52,13 @@ impl ServerInfo for Server {
         }
     }
 
-    fn address(&self) -> String {
+    fn address(&self) -> &str {
         match self {
             Server::Game(s) => s.address(),
             Server::Proxy(s) => s.address(),
             Server::Qtv(s) => s.address(),
             Server::Generic(s) => s.address(),
         }
-    }
-}
-
-pub trait ServerInfo {
-    // required
-    fn server_type(&self) -> ServerType;
-    fn software_type(&self) -> SoftwareType;
-    fn ip(&self) -> &str;
-    fn port(&self) -> u16;
-
-    // derived
-    fn address(&self) -> String {
-        format!("{}:{}", self.ip(), self.port())
     }
 }
 
@@ -126,6 +113,7 @@ fn build_server(
     let server = GenericServer {
         server_type: ServerType::from_version(&version),
         software_type: SoftwareType::from_version(&version),
+        address: format!("{}:{}", ip, hostport.port()),
         ip,
         port: hostport.port(),
         settings: status_res.settings().clone(),
