@@ -19,10 +19,10 @@ include = [
 anyhow = "1.0.97"
 hostport = { version = "0.3.0" }
 phf = { version = "0.11.3", features = ["macros"] }
-quake_serverinfo = { version = "0.8.0", default-features = false, features = [] }
+quake_serverinfo = { version = "0.9.0", default-features = false, features = [] }
 quake_text = "0.3.0"
 thiserror = "2.0.11"
-tinyudp = { version = "0.6.0", features=["tokio"] }
+tinyudp = { version = "0.6.0", features = ["tokio"] }
 
 tokio = { optional = true, version = "1.44.1", features = ["macros"] }
 serde = { optional = true, version = "1.0.219", features = ["derive"] }
@@ -36,7 +36,7 @@ ci = []
 serde = [
     "dep:serde",
     "dep:serde_json",
-    "quake_serverinfo/json",
+    "quake_serverinfo/serde",
     "hostport/serde",
 ]
 tokio = ["dep:tokio"]

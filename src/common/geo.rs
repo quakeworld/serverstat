@@ -5,12 +5,13 @@
 use anyhow::Error;
 use phf::phf_map;
 use quake_serverinfo::Settings;
+use std::hash::{Hash, Hasher};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Geolocation information for a server
-#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GeoInfo {
     pub(crate) country_code: Option<String>,
@@ -44,7 +45,7 @@ impl GeoInfo {
 }
 
 /// Builder for [`GeoInfo`]
-#[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
 pub struct GeoInfoBuilder {
     country_code: Option<String>,
     country_name: Option<String>,
@@ -123,6 +124,15 @@ impl Coords {
         self.lng
     }
 }
+
+impl Hash for Coords {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.lat.to_bits());
+        state.write_u64(self.lng.to_bits());
+    }
+}
+
+impl Eq for Coords {}
 
 impl TryFrom<&str> for Coords {
     type Error = Error;
