@@ -1,5 +1,4 @@
 use super::tokenize::tokenize;
-use hostport::HostPort;
 use quake_text::bytestr::to_unicode;
 
 #[cfg(feature = "serde")]
@@ -12,7 +11,7 @@ pub struct QtvStream {
     pub(crate) id: u32,
     pub(crate) name: String,
     pub(crate) number: Option<u32>,
-    pub(crate) address: Option<HostPort>,
+    pub(crate) address: Option<String>,
     pub(crate) client_count: u32,
     pub(crate) client_names: Vec<String>,
 }
@@ -42,7 +41,7 @@ impl QtvStream {
         self.number
     }
 
-    pub fn address(&self) -> Option<&HostPort> {
+    pub fn address(&self) -> Option<&String> {
         self.address.as_ref()
     }
 
@@ -70,13 +69,10 @@ impl TryFrom<&[u8]> for QtvStream {
         let id = parts[1].parse::<u32>().unwrap_or_default();
         let name = parts[2].to_string();
         let url = parts[3].to_string();
-        let (number, address) = match url.split_once('@') {
-            Some((number_str, hostport)) => {
-                let number = number_str.parse::<u32>().unwrap_or_default();
-                (Some(number), HostPort::try_from(hostport).ok())
-            }
-            None => (None, None),
-        };
+        let (number, address) = url
+            .split_once('@')
+            .map(|(num_str, addr)| (num_str.parse::<u32>().ok(), Some(addr.to_string())))
+            .unwrap_or((None, None));
         let client_count = parts[4].parse::<u32>().unwrap_or_default();
 
         Ok(Self {
@@ -95,7 +91,6 @@ impl TryFrom<&[u8]> for QtvStream {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use hostport::HostPort;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -104,11 +99,11 @@ mod tests {
         {
             let bytes = br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "" 0"#.as_slice();
             let stream = QtvStream::try_from(bytes)?;
-            assert_eq!(stream.id, 2);
-            assert_eq!(stream.name, "QUAKE.SE KTX Qtv (1)");
-            assert_eq!(stream.number, None);
-            assert_eq!(stream.address, None);
-            assert_eq!(stream.client_count, 0);
+            assert_eq!(stream.id(), 2);
+            assert_eq!(stream.name(), "QUAKE.SE KTX Qtv (1)");
+            assert_eq!(stream.number(), None);
+            assert_eq!(stream.address(), None);
+            assert_eq!(stream.client_count(), 0);
             assert!(stream.client_names.is_empty());
             assert_eq!(stream.url(), None);
         }
@@ -117,11 +112,11 @@ mod tests {
         {
             let bytes = br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "1@quake.se:28000" 0"#.as_slice();
             let stream = QtvStream::try_from(bytes)?;
-            assert_eq!(stream.id, 2);
-            assert_eq!(stream.name, "QUAKE.SE KTX Qtv (1)");
-            assert_eq!(stream.number, Some(1));
-            assert_eq!(stream.address, Some(HostPort::new("quake.se", 28000)?));
-            assert_eq!(stream.client_count, 0);
+            assert_eq!(stream.id(), 2);
+            assert_eq!(stream.name(), "QUAKE.SE KTX Qtv (1)");
+            assert_eq!(stream.number(), Some(1));
+            assert_eq!(stream.address(), Some(&"quake.se:28000".to_string()));
+            assert_eq!(stream.client_count(), 0);
             assert!(stream.client_names.is_empty());
             assert_eq!(stream.url(), Some("1@quake.se:28000".to_string()));
         }
