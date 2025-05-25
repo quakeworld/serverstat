@@ -17,7 +17,7 @@ include = [
 
 [dependencies]
 anyhow = "1.0.97"
-hostport = { version = "0.1.0", features = ["json"] }
+hostport = { version = "0.3.0" }
 phf = { version = "0.11.3", features = ["macros"] }
 quake_serverinfo = { version = "0.8.0", default-features = false, features = [] }
 quake_text = "0.3.0"
@@ -33,7 +33,12 @@ pretty_assertions = "1.4.1"
 
 [features]
 ci = []
-serde = ["dep:serde", "dep:serde_json", "quake_serverinfo/json"]
+serde = [
+    "dep:serde",
+    "dep:serde_json",
+    "quake_serverinfo/json",
+    "hostport/serde",
+]
 tokio = ["dep:tokio"]
 
 [lints.rust]
