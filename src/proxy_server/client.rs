@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProxyClient {
-    pub(super) id: u32,
-    pub(super) time: u32,
-    pub(super) name: String,
+    id: u32,
+    time: u32,
+    name: String,
 }
 
 impl From<&GenericClient> for ProxyClient {

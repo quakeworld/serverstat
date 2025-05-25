@@ -1,5 +1,5 @@
 //! Generic client connected to a server (client, player, spectator)
-use super::tokenize::tokenize;
+use crate::net::tokenize::tokenize;
 use anyhow::Result;
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;

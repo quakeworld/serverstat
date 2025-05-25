@@ -9,13 +9,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProxyServer {
-    pub(crate) software_type: SoftwareType,
-    pub(crate) address: String,
-    pub(crate) ip: String,
-    pub(crate) port: u16,
-    pub(crate) settings: ProxySettings,
-    pub(crate) clients: Vec<ProxyClient>,
-    pub(crate) geo: GeoInfo,
+    software_type: SoftwareType,
+    address: String,
+    ip: String,
+    port: u16,
+    settings: ProxySettings,
+    clients: Vec<ProxyClient>,
+    geo: GeoInfo,
 }
 
 impl ProxyServer {

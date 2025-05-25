@@ -1,4 +1,4 @@
-use super::tokenize::tokenize;
+use crate::net::tokenize::tokenize;
 use quake_text::bytestr::to_unicode;
 
 #[cfg(feature = "serde")]
@@ -8,27 +8,16 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct QtvStream {
-    pub(crate) id: u32,
-    pub(crate) name: String,
-    pub(crate) number: Option<u32>,
-    pub(crate) address: Option<String>,
-    pub(crate) client_count: u32,
-    pub(crate) client_names: Vec<String>,
+    id: u32,
+    name: String,
+    number: Option<u32>,
+    address: Option<String>,
+    client_count: u32,
+    pub(super) client_names: Vec<String>,
 }
 
 #[allow(dead_code)]
 impl QtvStream {
-    pub fn with_client_names(&self, client_names: &[String]) -> Self {
-        Self {
-            id: self.id,
-            name: self.name.clone(),
-            number: self.number,
-            address: self.address.clone(),
-            client_count: self.client_count,
-            client_names: client_names.to_vec(),
-        }
-    }
-
     pub fn id(&self) -> u32 {
         self.id
     }
@@ -65,6 +54,7 @@ impl TryFrom<&[u8]> for QtvStream {
     type Error = anyhow::Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        // todo validate number of parts
         let parts: Vec<String> = tokenize(to_unicode(bytes).as_str());
         let id = parts[1].parse::<u32>().unwrap_or_default();
         let name = parts[2].to_string();

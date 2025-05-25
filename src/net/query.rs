@@ -1,112 +1,59 @@
-use super::net_resolve::resolve_host;
-use super::server::GenericServer;
+use super::resolve::resolve_host;
 use super::svc_qtvusers::qtvusers;
 use super::svc_status::{Status119Response, status_119};
-use crate::{GameServer, GeoInfo, ProxyServer, QtvServer, QtvStream, ServerType, SoftwareType};
+use crate::{
+    GameServer, GenericServer, GeoInfo, ProxyServer, QtvServer, QtvStream, Server, ServerType,
+    SoftwareType,
+};
 use anyhow::Result;
 use hostport::HostPort;
 use std::time::Duration;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Server {
-    Proxy(ProxyServer),
-    Game(GameServer),
-    Qtv(QtvServer),
-    Generic(GenericServer),
-}
-
-impl Server {
-    fn server_type(&self) -> ServerType {
-        match self {
-            Server::Proxy(_) => ServerType::ProxyServer,
-            Server::Game(_) => ServerType::GameServer,
-            Server::Qtv(_) => ServerType::QtvServer,
-            Server::Generic(_) => ServerType::Unknown,
-        }
-    }
-
-    fn software_type(&self) -> SoftwareType {
-        match self {
-            Server::Proxy(s) => s.software_type(),
-            Server::Game(s) => s.software_type(),
-            Server::Qtv(s) => s.software_type(),
-            Server::Generic(s) => s.software_type(),
-        }
-    }
-
-    fn ip(&self) -> &str {
-        match self {
-            Server::Game(s) => s.ip(),
-            Server::Proxy(s) => s.ip(),
-            Server::Qtv(s) => s.ip(),
-            Server::Generic(s) => s.ip(),
-        }
-    }
-
-    fn port(&self) -> u16 {
-        match self {
-            Server::Game(s) => s.port(),
-            Server::Proxy(s) => s.port(),
-            Server::Qtv(s) => s.port(),
-            Server::Generic(s) => s.port(),
-        }
-    }
-
-    fn address(&self) -> &str {
-        match self {
-            Server::Game(s) => s.address(),
-            Server::Proxy(s) => s.address(),
-            Server::Qtv(s) => s.address(),
-            Server::Generic(s) => s.address(),
-        }
-    }
-}
 
 #[cfg(feature = "tokio")]
 use super::{svc_qtvusers::qtvusers_async, svc_status::status_119_async};
 
 /// Query a server (sync).
-pub fn query(address: &str, timeout: Duration) -> Result<Server> {
+pub fn query_server(address: &str, timeout: Duration) -> Result<Server> {
     let hostport = HostPort::try_from(address)?;
     let ip = resolve_host(hostport.host())?;
     let status_res = status_119(address, timeout)?;
 
-    let qtv_stream_opt = status_res.qtv_stream().as_ref().map(|stream| {
-        let names = qtvusers(address, timeout)
+    let qtv_stream_opt = status_res.qtv_stream().map(|stream| {
+        stream.client_names = qtvusers(address, timeout)
             .unwrap_or_default()
             .client_names();
-        stream.with_client_names(&names)
+        stream
     });
 
-    Ok(build_server(ip, hostport, status_res, qtv_stream_opt))
+    Ok(build_server(ip, hostport, status_res, &qtv_stream_opt))
 }
 
 /// Query a server (async).
 #[cfg(feature = "tokio")]
-pub async fn query_async(address: &str, timeout: Duration) -> Result<Server> {
+pub async fn query_server_async(address: &str, timeout: Duration) -> Result<Server> {
     let hostport = HostPort::try_from(address)?;
     let ip = resolve_host(hostport.host())?;
     let status_res = status_119_async(address, timeout).await?;
 
     let qtv_stream_opt = match status_res.qtv_stream() {
-        Some(stream) => {
-            let names = qtvusers_async(address, timeout)
+        Some(mut stream) => {
+            stream.client_names = qtvusers_async(address, timeout)
                 .await
                 .unwrap_or_default()
                 .client_names();
-            Some(stream.with_client_names(&names))
+            Some(stream)
         }
         None => None,
     };
 
-    Ok(build_server(ip, hostport, status_res, qtv_stream_opt))
+    Ok(build_server(ip, hostport, status_res, &qtv_stream_opt))
 }
 
 fn build_server(
     ip: String,
     hostport: HostPort,
     status_res: Status119Response,
-    qtv_stream: Option<QtvStream>,
+    qtv_stream: &Option<QtvStream>,
 ) -> Server {
     let version = status_res.settings().version.clone().unwrap_or_default();
 
@@ -143,7 +90,7 @@ mod tests {
     async fn test_query() -> Result<()> {
         // invalid address
         assert!(
-            query_async("foo.bar:666", Duration::from_millis(50))
+            query_server_async("foo.bar:666", Duration::from_millis(50))
                 .await
                 .is_err()
         );
@@ -158,7 +105,7 @@ mod tests {
                     .unwrap()
             };
             let timeout = Duration::from_secs_f32(0.5);
-            let generic_server = query_async("berlin2.qwsv.net:27500", timeout).await?;
+            let generic_server = query_server_async("berlin2.qwsv.net:27500", timeout).await?;
 
             if let Server::Game(server) = &generic_server {
                 assert_eq!(server.server_type(), ServerType::GameServer);
@@ -182,7 +129,7 @@ mod tests {
                 );
             }
 
-            let server2 = query("berlin2.qwsv.net:27500", timeout)?;
+            let server2 = query_server("berlin2.qwsv.net:27500", timeout)?;
             assert_eq!(generic_server, server2);
         }
 
