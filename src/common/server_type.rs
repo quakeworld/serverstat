@@ -4,7 +4,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 /// Server types: game, proxy, and QTV server
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(Serialize, Deserialize),

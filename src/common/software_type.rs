@@ -4,7 +4,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 /// Software types (e.g., FortressOne, FTE, MVDSV, QTV, QWFWD)
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(Serialize, Deserialize),

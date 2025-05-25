@@ -7,7 +7,7 @@ use anyhow::Result;
 use hostport::HostPort;
 use std::time::Duration;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Server {
     Proxy(ProxyServer),
     Game(GameServer),

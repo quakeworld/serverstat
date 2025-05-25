@@ -10,7 +10,7 @@ use quake_text::unicode;
 use serde::{Deserialize, Serialize};
 
 /// Represents a server where clients connect as [`Player`] or [`Spectator`].
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GameServer {
     pub(crate) software_type: SoftwareType,
