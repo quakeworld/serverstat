@@ -67,7 +67,6 @@ mod tests {
     use crate::generic_server::query::ServerInfo;
     use crate::{GenericClient, QtvClient, QtvStream, query_async};
     use anyhow::Result;
-    use hostport::HostPort;
     use pretty_assertions::assert_eq;
     use std::time::Duration;
 
@@ -82,7 +81,7 @@ mod tests {
     fn test_qtvstream_methods() -> Result<()> {
         let stream = QtvStream {
             number: Some(2),
-            address: Some(HostPort::new("dm6.uk", 28000)?),
+            address: Some("dm6.uk:28000".to_string()),
             ..Default::default()
         };
         assert_eq!(stream.url(), Some("2@dm6.uk:28000".to_string()));
@@ -97,7 +96,7 @@ mod tests {
                 id: 1,
                 name: "dm6.uk Qtv (7)".to_string(),
                 number: Some(7),
-                address: Some(HostPort::new("dm6.uk", 28000)?),
+                address: Some("dm6.uk:28000".to_string()),
                 client_count: 4,
                 client_names: vec![],
             }
