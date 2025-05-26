@@ -1,6 +1,6 @@
 //! Generic client connected to a server (client, player, spectator)
 use crate::net::tokenize::tokenize;
-use anyhow::Result;
+use anyhow::{Result, anyhow as e};
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;
 
@@ -32,21 +32,26 @@ impl TryFrom<&[u8]> for GenericClient {
     type Error = anyhow::Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let parts: Vec<String> = tokenize(bytestr::to_unicode(bytes).as_str());
-        let id: u32 = parts[0].parse()?;
-        let mut frags: i32 = parts[1].parse()?;
-        let time: u32 = parts[2].parse()?;
-        let ping_: i32 = parts[3].parse()?;
-        let mut name = parts[4].to_string();
-        let skin = parts[5].to_string();
-        let top_color: u8 = parts[6].parse()?;
-        let bottom_color: u8 = parts[7].parse()?;
-        let team = match parts.len() >= 9 {
-            true => parts[8].to_string(),
+        let tokens = tokenize(bytestr::to_unicode(bytes).as_str());
+
+        if tokens.len() < 8 {
+            return Err(e!("Invalid token count"));
+        }
+
+        let id: u32 = tokens[0].parse()?;
+        let mut frags: i32 = tokens[1].parse()?;
+        let time: u32 = tokens[2].parse()?;
+        let ping_: i32 = tokens[3].parse()?;
+        let mut name = tokens[4].to_string();
+        let skin = tokens[5].to_string();
+        let top_color: u8 = tokens[6].parse()?;
+        let bottom_color: u8 = tokens[7].parse()?;
+        let team = match tokens.len() >= 9 {
+            true => tokens[8].to_string(),
             _ => "".to_string(),
         };
-        let auth_cc = match parts.len() >= 10 {
-            true => parts[9].to_string(),
+        let auth_cc = match tokens.len() >= 10 {
+            true => tokens[9].to_string(),
             _ => "".to_string(),
         };
         let is_spectator = ping_ < 1;
@@ -55,7 +60,11 @@ impl TryFrom<&[u8]> for GenericClient {
             name = name.trim_start_matches("\\s\\").to_string();
         }
         let ping = ping_.unsigned_abs();
-        let is_bot = !(PLAYER_MIN_PING..=PLAYER_MAX_PING).contains(&(ping as usize));
+
+        let is_bot = match tokens.len() >= 11 {
+            true => tokens[10] == "b",
+            false => !(PLAYER_MIN_PING..=PLAYER_MAX_PING).contains(&(ping as usize)),
+        };
 
         Ok(Self {
             id,
