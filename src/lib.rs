@@ -31,7 +31,7 @@ pub use proxy_server::client::ProxyClient;
 pub use proxy_server::server::ProxyServer;
 pub use proxy_server::settings::ProxySettings;
 
-pub use net::query::query_server;
+pub use net::query::serverinfo;
 pub use server::Server;
 
 pub use qtv_server::client::QtvClient;
@@ -40,4 +40,4 @@ pub use qtv_server::settings::QtvSettings;
 
 // public api with async support (optional)
 #[cfg(feature = "tokio")]
-pub use net::query::query_server_async;
+pub use net::query::serverinfo_async;

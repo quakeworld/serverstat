@@ -1,33 +1,81 @@
 use super::resolve::{self, host_as_ipv4};
-use super::svc_status::{self, Status119Response, query_status_119};
+use super::svc_qtvusers::{self, QtvusersResponse};
+use super::svc_status::{self, StatusResponse};
 use crate::{
-    GameServer, GenericServer, GeoInfo, ProxyServer, QtvServer, Server, ServerType, SoftwareType,
+    GameServer, GenericServer, GeoInfo, ProxyServer, QtvServer, QtvStream, Server, ServerType,
+    SoftwareType,
 };
 use hostport::HostPort;
 use std::time::Duration;
 
-#[cfg(feature = "tokio")]
-use super::svc_status::query_status_119_async;
-
 /// Query a server (sync).
-pub fn query_server(address: &str, timeout: Duration) -> Result<Server, Error> {
+pub fn serverinfo(address: &str, timeout: Duration) -> Result<Server, Error> {
     let hostport = HostPort::try_from(address)?;
     let ip = host_as_ipv4(hostport.host())?;
-    let status_res = query_status_119(address, timeout)?;
-    Ok(compose_server(ip, hostport, status_res))
+    let status_response = query_status(address, timeout)?;
+
+    let qtv_client_names = if status_response
+        .qtv_stream()
+        .as_ref()
+        .is_some_and(|stream| stream.client_count > 0)
+    {
+        query_qtvusers(address, timeout)
+            .map(|res| res.client_names().to_vec())
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    Ok(compose_server(
+        ip,
+        hostport,
+        status_response,
+        qtv_client_names,
+    ))
 }
 
 /// Query a server (async).
 #[cfg(feature = "tokio")]
-pub async fn query_server_async(address: &str, timeout: Duration) -> Result<Server, Error> {
+pub async fn serverinfo_async(address: &str, timeout: Duration) -> Result<Server, Error> {
     let hostport = HostPort::try_from(address)?;
     let ip = host_as_ipv4(hostport.host())?;
-    let status_res = query_status_119_async(address, timeout).await?;
-    Ok(compose_server(ip, hostport, status_res))
+    let status_response = query_status_async(address, timeout).await?;
+
+    let qtv_client_names = if status_response
+        .qtv_stream()
+        .as_ref()
+        .is_some_and(|stream| stream.client_count > 0)
+    {
+        query_qtvusers_async(address, timeout)
+            .await
+            .map(|res| res.client_names().to_vec())
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    Ok(compose_server(
+        ip,
+        hostport,
+        status_response,
+        qtv_client_names,
+    ))
 }
 
-fn compose_server(ip: String, hostport: HostPort, status_res: Status119Response) -> Server {
+fn compose_server(
+    ip: String,
+    hostport: HostPort,
+    status_res: StatusResponse,
+    qtv_client_names: Vec<String>,
+) -> Server {
     let version = status_res.settings().version.clone().unwrap_or_default();
+    let qtv_stream = status_res.qtv_stream().as_ref().map(|s| QtvStream {
+        id: s.id,
+        name: s.name.to_string(),
+        number: s.number,
+        client_count: s.client_count,
+        address: s.address.clone(),
+        client_names: qtv_client_names,
+    });
+
     let server = GenericServer {
         server_type: ServerType::from_version(&version),
         software_type: SoftwareType::from_version(&version),
@@ -36,7 +84,7 @@ fn compose_server(ip: String, hostport: HostPort, status_res: Status119Response)
         port: hostport.port(),
         settings: status_res.settings().clone(),
         clients: status_res.clients().cloned().collect(),
-        qtv_stream: None,
+        qtv_stream,
         geo: GeoInfo::from(status_res.settings()),
     };
 
@@ -48,16 +96,50 @@ fn compose_server(ip: String, hostport: HostPort, status_res: Status119Response)
     }
 }
 
+// query for status (svc_status)
+fn query_status(address: &str, timeout: Duration) -> Result<StatusResponse, Error> {
+    let options = tinyudp::ReadOptions::new(timeout, svc_status::BUFFER_SIZE);
+    let response = tinyudp::send_and_receive(address, svc_status::COMMAND, options)?;
+    Ok(StatusResponse::try_from(response.as_slice())?)
+}
+
+#[cfg(feature = "tokio")]
+async fn query_status_async(address: &str, timeout: Duration) -> Result<StatusResponse, Error> {
+    let options = tinyudp::ReadOptions::new(timeout, svc_status::BUFFER_SIZE);
+    let response = tinyudp::send_and_receive_async(address, svc_status::COMMAND, options).await?;
+    Ok(StatusResponse::try_from(response.as_slice())?)
+}
+
+/// query for qtvusers (svc_qtvusers)
+fn query_qtvusers(address: &str, timeout: Duration) -> Result<QtvusersResponse, Error> {
+    let options = tinyudp::ReadOptions::new(timeout, svc_qtvusers::BUFFER_SIZE);
+    let response = tinyudp::send_and_receive(address, svc_qtvusers::COMMAND, options)?;
+    Ok(QtvusersResponse::try_from(response.as_slice())?)
+}
+
+#[cfg(feature = "tokio")]
+async fn query_qtvusers_async(address: &str, timeout: Duration) -> Result<QtvusersResponse, Error> {
+    let options = tinyudp::ReadOptions::new(timeout, svc_qtvusers::BUFFER_SIZE);
+    let response = tinyudp::send_and_receive_async(address, svc_qtvusers::COMMAND, options).await?;
+    Ok(QtvusersResponse::try_from(response.as_slice())?)
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    AddressParse(#[from] hostport::ParseError),
+    ParseAddress(#[from] hostport::ParseError),
 
     #[error(transparent)]
-    AddressResolve(#[from] resolve::Error),
+    ResolveAddress(#[from] resolve::Error),
 
     #[error(transparent)]
-    StatusQuery(#[from] svc_status::Status119ResponseError),
+    Udp(#[from] tinyudp::Error),
+
+    #[error(transparent)]
+    Status(#[from] svc_status::Error),
+
+    #[error(transparent)]
+    Qtvusers(#[from] svc_qtvusers::Error),
 }
 
 #[cfg(test)]
@@ -72,7 +154,7 @@ mod tests {
     async fn test_query() -> Result<()> {
         // invalid address
         assert!(
-            query_server_async("foo.bar:666", Duration::from_millis(50))
+            serverinfo_async("foo.bar:666", Duration::from_millis(50))
                 .await
                 .is_err()
         );
@@ -87,7 +169,7 @@ mod tests {
                     .unwrap()
             };
             let timeout = Duration::from_secs_f32(0.5);
-            let generic_server = query_server_async("de.quake.world:28501", timeout).await?;
+            let generic_server = serverinfo_async("de.quake.world:28501", timeout).await?;
 
             if let Server::Game(server) = &generic_server {
                 assert_eq!(server.server_type(), ServerType::GameServer);
@@ -100,7 +182,7 @@ mod tests {
                 assert!(settings.hostname.unwrap().contains("de.quake.world:28501"));
             }
 
-            let server_sync = query_server("de.quake.world:28501", timeout)?;
+            let server_sync = serverinfo("de.quake.world:28501", timeout)?;
             assert_eq!(generic_server, server_sync);
         }
 
