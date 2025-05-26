@@ -85,7 +85,7 @@ impl QtvusersResponse {
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
-    #[error("query error: {0}")]
+    #[error(transparent)]
     QueryError(#[from] tinyudp::Error),
 
     #[error(transparent)]
@@ -145,7 +145,7 @@ mod tests {
         );
         assert_eq!(
             QtvusersResponse::parse(b"\xff\xff\xff\xffnqtvusers foo\n").unwrap_err(),
-            ParseError::InvalidBody("asdasdasd".to_string())
+            ParseError::InvalidBody("invalid stream id: not a number".to_string())
         );
 
         // no users
