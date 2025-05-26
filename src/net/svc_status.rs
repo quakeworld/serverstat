@@ -1,6 +1,8 @@
-use crate::{GenericClient, QtvStream};
+use super::tokenize::tokenize;
+use crate::GenericClient;
 use anyhow::Result;
 use quake_serverinfo::Settings;
+use quake_text::bytestr::to_unicode;
 use std::io::{BufRead, Cursor};
 use std::time::Duration;
 use thiserror::Error;
@@ -18,46 +20,41 @@ use tinyudp::ReadOptions;
 // svc_status 119 = all except for STATUS_SPECTATORS_AS_PLAYERS
 
 /// Sends a `status 119` query to the specified address and returns the parsed response.
-const CMD_STATUS_119: &[u8] = b"\xff\xff\xff\xffstatus 119";
-const BUFFER_SIZE: usize = 64 * 1024;
+const REQUEST_MESSAGE: &[u8] = b"\xff\xff\xff\xffstatus 119";
+const REQUEST_BUFFER_SIZE: usize = 64 * 1024;
 
-pub(super) fn status_119(
+pub(super) fn query_status_119(
     address: &str,
     timeout: Duration,
 ) -> Result<Status119Response, Status119ResponseError> {
-    let response_bytes = tinyudp::send_and_receive(
+    let response = tinyudp::send_and_receive(
         address,
-        CMD_STATUS_119,
-        ReadOptions::new(timeout, BUFFER_SIZE),
+        REQUEST_MESSAGE,
+        ReadOptions::new(timeout, REQUEST_BUFFER_SIZE),
     )?;
-    let response = Status119Response::try_from(response_bytes.as_slice())?;
-    Ok(response)
+    Status119Response::parse(response.as_slice())
 }
 
 #[cfg(feature = "tokio")]
-pub(super) async fn status_119_async(
+pub(super) async fn query_status_119_async(
     address: &str,
     timeout: Duration,
 ) -> Result<Status119Response, Status119ResponseError> {
-    let response_bytes = tinyudp::send_and_receive_async(
+    let response = tinyudp::send_and_receive_async(
         address,
-        CMD_STATUS_119,
-        ReadOptions::new(timeout, BUFFER_SIZE),
+        REQUEST_MESSAGE,
+        ReadOptions::new(timeout, REQUEST_BUFFER_SIZE),
     )
     .await?;
-    let response = Status119Response::try_from(response_bytes.as_slice())?;
-    Ok(response)
+    Status119Response::parse(response.as_slice())
 }
 
 /// Represents the response to a `status 119` query.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub(super) struct Status119Response {
-    /// Server settings parsed from the response.
     settings: Settings,
-    /// List of connected clients.
     clients: Vec<GenericClient>,
-    /// Optional QTV stream information.
-    qtv_stream: Option<QtvStream>,
+    qtv_stream: Option<Status119QtvStream>,
 }
 
 #[allow(dead_code)]
@@ -70,24 +67,20 @@ impl Status119Response {
         self.clients.iter()
     }
 
-    pub fn qtv_stream(&self) -> &Option<QtvStream> {
+    pub fn qtv_stream(&self) -> &Option<Status119QtvStream> {
         &self.qtv_stream
     }
-}
 
-impl TryFrom<&[u8]> for Status119Response {
-    type Error = Status119ResponseError;
-
-    fn try_from(bytes: &[u8]) -> Result<Self, Status119ResponseError> {
+    pub(crate) fn parse(response: &[u8]) -> Result<Self, Status119ResponseError> {
         // validate header
         let header = vec![255, 255, 255, 255, 110];
 
-        if !bytes.starts_with(&header) {
+        if !response.starts_with(&header) {
             return Err(Status119ResponseError::InvalidHeader);
         }
 
         // parse body
-        let body = &bytes[header.len()..];
+        let body = &response[header.len()..];
         let rows: Vec<Vec<u8>> = Cursor::new(body).split(10).filter_map(|l| l.ok()).collect();
 
         const MIN_SERVERINFO_LENGTH: usize = "hostname\\x".len();
@@ -101,11 +94,11 @@ impl TryFrom<&[u8]> for Status119Response {
 
         // parse clients and additional info
         let mut clients: Vec<GenericClient> = vec![];
-        let mut qtv_stream: Option<QtvStream> = None;
+        let mut qtv_stream: Option<Status119QtvStream> = None;
 
         for row in rows {
             if row.starts_with(b"qtv ") {
-                qtv_stream = QtvStream::try_from(row.as_slice()).ok();
+                qtv_stream = Status119QtvStream::parse(row.as_slice()).ok();
             } else if let Ok(client) = GenericClient::try_from(row.as_slice()) {
                 clients.push(client);
             }
@@ -119,15 +112,71 @@ impl TryFrom<&[u8]> for Status119Response {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub struct Status119QtvStream {
+    id: u32,
+    name: String,
+    number: Option<u32>,
+    address: Option<String>,
+    client_count: u32,
+}
+
+impl Status119QtvStream {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn number(&self) -> Option<u32> {
+        self.number
+    }
+
+    pub fn address(&self) -> Option<&str> {
+        self.address.as_deref()
+    }
+
+    pub fn client_count(&self) -> u32 {
+        self.client_count
+    }
+
+    pub fn url(&self) -> Option<String> {
+        Some(format!("{}@{}", self.number()?, self.address()?))
+    }
+
+    pub(crate) fn parse(bytes: &[u8]) -> Result<Self, anyhow::Error> {
+        // todo validate number of parts
+        let parts: Vec<String> = tokenize(to_unicode(bytes).as_str());
+        let id = parts[1].parse::<u32>().unwrap_or_default();
+        let name = parts[2].to_string();
+        let url = parts[3].to_string();
+        let (number, address) = url
+            .split_once('@')
+            .map(|(num_str, addr)| (num_str.parse::<u32>().ok(), Some(addr.to_string())))
+            .unwrap_or((None, None));
+        let client_count = parts[4].parse::<u32>().unwrap_or_default();
+
+        Ok(Self {
+            id,
+            name,
+            number,
+            address,
+            client_count,
+        })
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum Status119ResponseError {
-    #[error("UDP error")]
+    #[error("query error: {0}")]
     UdpError(#[from] tinyudp::Error),
 
-    #[error("Invalid response header")]
+    #[error("invalid response header")]
     InvalidHeader,
 
-    #[error("Invalid response body")]
+    #[error("invalid response body")]
     InvalidBody,
 }
 
@@ -139,22 +188,22 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_try_from() -> Result<()> {
+    fn test_status119response_parse() -> Result<()> {
         // invalid response header
         {
-            let res = Status119Response::try_from([0].as_slice());
+            let res = Status119Response::parse([0].as_slice());
             assert_eq!(
                 res.unwrap_err().to_string(),
-                "Invalid response header".to_string()
+                "invalid response header".to_string()
             );
         }
 
         // invalid resposne body
         {
-            let res = Status119Response::try_from([255, 255, 255, 255, 110, 0].as_slice());
+            let res = Status119Response::parse([255, 255, 255, 255, 110, 0].as_slice());
             assert_eq!(
                 res.unwrap_err().to_string(),
-                "Invalid response body".to_string()
+                "invalid response body".to_string()
             );
         }
 
@@ -203,7 +252,7 @@ mod tests {
             ]
             .as_slice();
 
-            let res = Status119Response::try_from(bytes)?;
+            let res = Status119Response::parse(bytes)?;
 
             {
                 assert_eq!(
@@ -215,9 +264,8 @@ mod tests {
                 assert_eq!(qtv_stream.id(), 1);
                 assert_eq!(qtv_stream.name(), "zasadzka Qtv (2)".to_string());
                 assert_eq!(qtv_stream.number(), Some(2));
-                assert_eq!(qtv_stream.address(), Some(&"zasadzka.pl:28000".to_string()));
+                assert_eq!(qtv_stream.address(), Some("zasadzka.pl:28000"));
                 assert_eq!(qtv_stream.client_count(), 2);
-                assert!(qtv_stream.client_names().as_slice().is_empty());
 
                 assert_eq!(
                     res.clients,
@@ -337,6 +385,35 @@ mod tests {
                     ]
                 );
             }
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_status119qtvstream_parse() -> Result<()> {
+        // empty url
+        {
+            let bytes = br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "" 0"#.as_slice();
+            let stream = Status119QtvStream::parse(bytes)?;
+            assert_eq!(stream.id(), 2);
+            assert_eq!(stream.name(), "QUAKE.SE KTX Qtv (1)");
+            assert_eq!(stream.number(), None);
+            assert_eq!(stream.address(), None);
+            assert_eq!(stream.client_count(), 0);
+            assert_eq!(stream.url(), None);
+        }
+
+        // valid
+        {
+            let bytes = br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "1@quake.se:28000" 0"#.as_slice();
+            let stream = Status119QtvStream::parse(bytes)?;
+            assert_eq!(stream.id(), 2);
+            assert_eq!(stream.name(), "QUAKE.SE KTX Qtv (1)");
+            assert_eq!(stream.number(), Some(1));
+            assert_eq!(stream.address(), Some("quake.se:28000"));
+            assert_eq!(stream.client_count(), 0);
+            assert_eq!(stream.url(), Some("1@quake.se:28000".to_string()));
         }
 
         Ok(())
