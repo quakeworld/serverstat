@@ -5,12 +5,9 @@ use crate::{ClientSlots, GeoInfo, Player, QtvStream, ServerType, SoftwareType, S
 use quake_serverinfo::Settings;
 use quake_text::unicode;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Represents a server where clients connect as [`Player`] or [`Spectator`].
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GameServer {
     pub(crate) software_type: SoftwareType,
     pub(crate) address: String,

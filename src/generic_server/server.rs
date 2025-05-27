@@ -1,12 +1,9 @@
 use crate::{GenericClient, GeoInfo, QtvStream, ServerType, SoftwareType};
 pub use quake_serverinfo::Settings;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Represents a server of unknown type.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GenericServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,

@@ -4,15 +4,12 @@ use quake_infostring::parse_fields;
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 const PLAYER_MIN_PING: usize = 12;
 const PLAYER_MAX_PING: usize = 600;
 
 /// A client connected to a [`GenericServer`](crate::GenericServer).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GenericClient {
     pub(crate) id: u32,
     pub(crate) name: String,

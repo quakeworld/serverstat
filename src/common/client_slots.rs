@@ -1,9 +1,6 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Represents used / total / free slots on a server.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClientSlots {
     total: u32,
     used: u32,

@@ -4,12 +4,9 @@ use quake_text::unicode;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Team information in a [`GameServer`](crate::GameServer)
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Team {
     name: String,
     frags: i32,

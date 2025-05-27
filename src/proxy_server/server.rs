@@ -2,12 +2,9 @@ use crate::{
     ClientSlots, GenericServer, GeoInfo, ProxyClient, ProxySettings, ServerType, SoftwareType,
 };
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Represents a proxy server
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProxyServer {
     software_type: SoftwareType,
     address: String,

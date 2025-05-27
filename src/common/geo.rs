@@ -7,12 +7,9 @@ use phf::phf_map;
 use quake_serverinfo::Settings;
 use std::hash::{Hash, Hasher};
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Geolocation information for a server
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GeoInfo {
     pub(crate) country_code: Option<String>,
     pub(crate) country_name: Option<String>,
@@ -104,7 +101,7 @@ impl GeoInfoBuilder {
 
 /// Geographic coordinates (latitude and longitude)
 #[derive(Debug, Clone, PartialEq, PartialOrd, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Coords {
     lat: f64,
     lng: f64,

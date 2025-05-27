@@ -1,11 +1,8 @@
 use quake_serverinfo::Settings;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Configuration settings for [`ProxyServer`](crate::ProxyServer) instances.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProxySettings {
     hostname: String,
     maxclients: u32,

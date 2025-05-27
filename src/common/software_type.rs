@@ -1,13 +1,10 @@
 use std::fmt::Display;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Software types (e.g., FortressOne, FTE, MVDSV, QTV, QWFWD)
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
-    derive(Serialize, Deserialize),
+    derive(serde::Serialize, serde::Deserialize),
     serde(rename_all = "snake_case")
 )]
 pub enum SoftwareType {

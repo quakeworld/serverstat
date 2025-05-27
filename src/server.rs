@@ -1,6 +1,7 @@
 use crate::{GameServer, GenericServer, ProxyServer, QtvServer};
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Server {
     Game(GameServer),
     Generic(GenericServer),

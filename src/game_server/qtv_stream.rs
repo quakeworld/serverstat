@@ -1,9 +1,6 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// Represents a QTV stream in a [`GameServer`](crate::GameServer)
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct QtvStream {
     pub(crate) id: u32,
     pub(crate) name: String,

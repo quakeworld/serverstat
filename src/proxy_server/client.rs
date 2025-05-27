@@ -1,11 +1,8 @@
 use crate::GenericClient;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 /// A client connected to a [`ProxyServer`](crate::ProxyServer)
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProxyClient {
     id: u32,
     time: u32,
