@@ -127,7 +127,7 @@ async fn query_qtvusers_async(address: &str, timeout: Duration) -> Result<Qtvuse
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    ParseAddress(#[from] hostport::ParseError),
+    InvalidAddress(#[from] hostport::ParseError),
 
     #[error(transparent)]
     ResolveAddress(#[from] resolve::Error),
@@ -136,10 +136,10 @@ pub enum Error {
     Udp(#[from] tinyudp::Error),
 
     #[error(transparent)]
-    Status(#[from] svc_status::Error),
+    StatusQuery(#[from] svc_status::Error),
 
     #[error(transparent)]
-    Qtvusers(#[from] svc_qtvusers::Error),
+    QtvusersQuery(#[from] svc_qtvusers::Error),
 }
 
 #[cfg(test)]
@@ -151,7 +151,7 @@ mod tests {
     use std::net::{IpAddr, ToSocketAddrs};
 
     #[tokio::test]
-    async fn test_query() -> Result<()> {
+    async fn test_serverinfo() -> Result<()> {
         // invalid address
         assert!(
             serverinfo_async("foo.bar:666", Duration::from_millis(50))
@@ -168,7 +168,7 @@ mod tests {
                     .map(|addr| addr.ip().to_string())
                     .unwrap()
             };
-            let timeout = Duration::from_secs_f32(0.5);
+            let timeout = Duration::from_secs(1);
             let generic_server = serverinfo_async("de.quake.world:28501", timeout).await?;
 
             if let Server::Game(server) = &generic_server {
@@ -182,10 +182,27 @@ mod tests {
                 assert!(settings.hostname.unwrap().contains("de.quake.world:28501"));
             }
 
-            let server_sync = serverinfo("de.quake.world:28501", timeout)?;
-            assert_eq!(generic_server, server_sync);
+            assert_eq!(generic_server, serverinfo("de.quake.world:28501", timeout)?);
         }
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_status() -> Result<()> {
+        assert_eq!(
+            query_status_async("quake.se:28501", Duration::from_secs(1)).await?,
+            query_status("quake.se:28501", Duration::from_secs(1))?
+        );
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_query_qtvusers() -> Result<()> {
+        assert_eq!(
+            query_qtvusers_async("quake.se:28501", Duration::from_secs(1)).await?,
+            query_qtvusers("quake.se:28501", Duration::from_secs(1))?
+        );
         Ok(())
     }
 }

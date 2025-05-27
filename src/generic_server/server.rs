@@ -5,7 +5,7 @@ pub use quake_serverinfo::Settings;
 use serde::{Deserialize, Serialize};
 
 /// Represents a server of unknown type.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct GenericServer {
     pub(crate) server_type: ServerType,
