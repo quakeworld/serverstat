@@ -20,6 +20,12 @@ pub enum SoftwareType {
     Unknown,
 }
 
+impl Default for SoftwareType {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
 impl Display for SoftwareType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

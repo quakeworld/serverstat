@@ -17,6 +17,12 @@ pub enum ServerType {
     Unknown,
 }
 
+impl Default for ServerType {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
 impl Display for ServerType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
