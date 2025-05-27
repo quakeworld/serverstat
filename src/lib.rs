@@ -31,7 +31,7 @@ pub use proxy_server::client::ProxyClient;
 pub use proxy_server::server::ProxyServer;
 pub use proxy_server::settings::ProxySettings;
 
-pub use net::query::serverinfo;
+pub use net::query::{QueryError, serverinfo};
 pub use server::Server;
 
 pub use qtv_server::client::QtvClient;

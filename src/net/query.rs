@@ -9,7 +9,7 @@ use hostport::HostPort;
 use std::time::Duration;
 
 /// Query a server (sync).
-pub fn serverinfo(address: &str, timeout: Duration) -> Result<Server, Error> {
+pub fn serverinfo(address: &str, timeout: Duration) -> Result<Server, QueryError> {
     let hostport = HostPort::try_from(address)?;
     let ip = host_as_ipv4(hostport.host())?;
     let status_response = query_status(address, timeout)?;
@@ -35,7 +35,7 @@ pub fn serverinfo(address: &str, timeout: Duration) -> Result<Server, Error> {
 
 /// Query a server (async).
 #[cfg(feature = "tokio")]
-pub async fn serverinfo_async(address: &str, timeout: Duration) -> Result<Server, Error> {
+pub async fn serverinfo_async(address: &str, timeout: Duration) -> Result<Server, QueryError> {
     let hostport = HostPort::try_from(address)?;
     let ip = host_as_ipv4(hostport.host())?;
     let status_response = query_status_async(address, timeout).await?;
@@ -97,35 +97,35 @@ fn compose_server(
 }
 
 // query for status (svc_status)
-fn query_status(address: &str, timeout: Duration) -> Result<StatusResponse, Error> {
+fn query_status(address: &str, timeout: Duration) -> Result<StatusResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_status::BUFFER_SIZE);
     let response = tinyudp::send_and_receive(address, svc_status::COMMAND, options)?;
     Ok(StatusResponse::try_from(response.as_slice())?)
 }
 
 #[cfg(feature = "tokio")]
-async fn query_status_async(address: &str, timeout: Duration) -> Result<StatusResponse, Error> {
+async fn query_status_async(address: &str, timeout: Duration) -> Result<StatusResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_status::BUFFER_SIZE);
     let response = tinyudp::send_and_receive_async(address, svc_status::COMMAND, options).await?;
     Ok(StatusResponse::try_from(response.as_slice())?)
 }
 
 /// query for qtvusers (svc_qtvusers)
-fn query_qtvusers(address: &str, timeout: Duration) -> Result<QtvusersResponse, Error> {
+fn query_qtvusers(address: &str, timeout: Duration) -> Result<QtvusersResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_qtvusers::BUFFER_SIZE);
     let response = tinyudp::send_and_receive(address, svc_qtvusers::COMMAND, options)?;
     Ok(QtvusersResponse::try_from(response.as_slice())?)
 }
 
 #[cfg(feature = "tokio")]
-async fn query_qtvusers_async(address: &str, timeout: Duration) -> Result<QtvusersResponse, Error> {
+async fn query_qtvusers_async(address: &str, timeout: Duration) -> Result<QtvusersResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_qtvusers::BUFFER_SIZE);
     let response = tinyudp::send_and_receive_async(address, svc_qtvusers::COMMAND, options).await?;
     Ok(QtvusersResponse::try_from(response.as_slice())?)
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum QueryError {
     #[error(transparent)]
     InvalidAddress(#[from] hostport::ParseError),
 
