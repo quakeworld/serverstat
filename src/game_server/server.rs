@@ -119,3 +119,86 @@ impl From<&GenericServer> for GameServer {
         }
     }
 }
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use super::*;
+    use crate::{Coords, GenericClient, GeoInfo, ServerType, SoftwareType};
+    use pretty_assertions::assert_eq;
+    use quake_serverinfo::Settings;
+
+    #[test]
+    fn test_from_genericserver() {
+        let generic = GenericServer {
+            server_type: ServerType::GameServer,
+            software_type: SoftwareType::Mvdsv,
+            address: "10.10.10.10".to_string(),
+            ip: "10.10.10.10".to_string(),
+            port: 28501,
+            settings: Settings {
+                hostname: Some("LocalMvdsv".to_string()),
+                maxclients: Some(4),
+                maxspectators: Some(8),
+                teamplay: Some(2),
+                ..Default::default()
+            },
+            clients: vec![
+                GenericClient {
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    is_spectator: true,
+                    ..Default::default()
+                },
+            ],
+            qtv_stream: None,
+            geo: GeoInfo {
+                country_code: Some("US".to_string()),
+                country_name: Some("United States".to_string()),
+                city: Some("New York".to_string()),
+                region: Some("North America".to_string()),
+                coords: Some(Coords::new(40.7128, -74.0060)),
+            },
+        };
+        let server = GameServer::from(&generic);
+        assert_eq!(server.server_type(), ServerType::GameServer);
+        assert_eq!(server.software_type(), SoftwareType::Mvdsv);
+        assert_eq!(server.address(), generic.address());
+        assert_eq!(server.ip(), generic.ip());
+        assert_eq!(server.port(), generic.port());
+        assert_eq!(server.player_slots(), ClientSlots::new(2, 4));
+        assert_eq!(server.spectator_slots(), ClientSlots::new(1, 8));
+        assert_eq!(server.teams().count(), 1);
+        assert_eq!(server.players().count(), 2);
+        assert_eq!(server.spectators().count(), 1);
+        assert_eq!(server.qtv_stream(), None);
+        assert_eq!(server.geo(), generic.geo());
+
+        // no teamplay
+        let generic = GenericServer {
+            settings: Settings {
+                teamplay: Some(0),
+                ..Default::default()
+            },
+            clients: vec![
+                GenericClient {
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    is_spectator: false,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+        let server = GameServer::from(&generic);
+        assert_eq!(server.teams().count(), 0);
+    }
+}
