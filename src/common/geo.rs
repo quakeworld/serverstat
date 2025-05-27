@@ -46,7 +46,7 @@ impl GeoInfo {
 
 /// Builder for [`GeoInfo`]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
-pub struct GeoInfoBuilder {
+pub(crate) struct GeoInfoBuilder {
     country_code: Option<String>,
     country_name: Option<String>,
     city: Option<String>,
@@ -66,23 +66,23 @@ impl GeoInfoBuilder {
         }
     }
 
-    pub fn country_code(mut self, code: String) -> Self {
-        self.country_code = Some(code);
+    pub fn country_code(mut self, code: impl Into<String>) -> Self {
+        self.country_code = Some(code.into());
         self
     }
 
-    pub fn country_name(mut self, name: String) -> Self {
-        self.country_name = Some(name);
+    pub fn country_name(mut self, name: impl Into<String>) -> Self {
+        self.country_name = Some(name.into());
         self
     }
 
-    pub fn city(mut self, city: String) -> Self {
-        self.city = Some(city);
+    pub fn city(mut self, city: impl Into<String>) -> Self {
+        self.city = Some(city.into());
         self
     }
 
-    pub fn region(mut self, region: String) -> Self {
-        self.region = Some(region);
+    pub fn region(mut self, region: impl Into<String>) -> Self {
+        self.region = Some(region.into());
         self
     }
 
@@ -444,6 +444,7 @@ pub mod tests {
     use anyhow::Result;
     use pretty_assertions::assert_eq;
     use quake_serverinfo::Settings;
+    use std::hash::DefaultHasher;
 
     #[test]
     fn test_coordinates() -> Result<()> {
@@ -454,24 +455,75 @@ pub mod tests {
         let coords = Coords::try_from("40.7128,-74.0060")?;
         assert_eq!(coords.lat(), 40.7128);
         assert_eq!(coords.lng(), -74.0060);
-
         assert_eq!(Coords::new(40.7128, -74.0060), coords);
 
         Ok(())
     }
 
     #[test]
+    fn test_coords_hash_equality() {
+        let c1 = Coords {
+            lat: 40.0,
+            lng: -70.0,
+        };
+        let c2 = Coords {
+            lat: 40.0,
+            lng: -70.0,
+        };
+        let c3 = Coords {
+            lat: 41.0,
+            lng: -70.0,
+        };
+
+        let mut hasher1 = DefaultHasher::new();
+        c1.hash(&mut hasher1);
+        let h1 = hasher1.finish();
+
+        let mut hasher2 = DefaultHasher::new();
+        c2.hash(&mut hasher2);
+        let h2 = hasher2.finish();
+
+        let mut hasher3 = DefaultHasher::new();
+        c3.hash(&mut hasher3);
+        let h3 = hasher3.finish();
+
+        assert_eq!(h1, h2, "Hashes for equal coords should match");
+        assert_ne!(h1, h3, "Hashes for different coords should not match");
+    }
+
+    #[test]
     fn test_geo_info() {
-        let geo = GeoInfo::from(&Settings {
+        let info = GeoInfo::from(&Settings {
             countrycode: Some("US".to_string()),
             city: Some("New York".to_string()),
             coords: Some("40.7128,-74.0060".to_string()),
             ..Default::default()
         });
-        assert_eq!(geo.coords(), &Some(Coords::new(40.7128, -74.0060)));
-        assert_eq!(geo.country_code(), &Some("US".to_string()));
-        assert_eq!(geo.country_name(), &Some("United States".to_string()));
-        assert_eq!(geo.city(), &Some("New York".to_string()));
-        assert_eq!(geo.region(), &Some("North America".to_string()));
+
+        assert_eq!(info.country_code(), &Some("US".to_string()));
+        assert_eq!(info.country_name(), &Some("United States".to_string()));
+        assert_eq!(info.city(), &Some("New York".to_string()));
+        assert_eq!(info.region(), &Some("North America".to_string()));
+        assert_eq!(info.coords(), &Some(Coords::new(40.7128, -74.0060)));
+    }
+
+    #[test]
+    fn test_geo_info_builder() {
+        assert_eq!(
+            GeoInfoBuilder::new()
+                .country_code("US")
+                .country_name("United States")
+                .city("New York")
+                .region("North America")
+                .coords(Coords::new(40.7128, -74.0060))
+                .build(),
+            GeoInfo {
+                country_code: Some("US".to_string()),
+                country_name: Some("United States".to_string()),
+                city: Some("New York".to_string()),
+                region: Some("North America".to_string()),
+                coords: Some(Coords::new(40.7128, -74.0060)),
+            }
+        );
     }
 }
