@@ -10,7 +10,7 @@ pub enum Server {
 }
 
 impl Server {
-    fn server_type(&self) -> ServerType {
+    pub fn server_type(&self) -> ServerType {
         match self {
             Server::Game(_) => ServerType::GameServer,
             Server::Generic(_) => ServerType::Unknown,
@@ -19,7 +19,7 @@ impl Server {
         }
     }
 
-    fn software_type(&self) -> SoftwareType {
+    pub fn software_type(&self) -> SoftwareType {
         match self {
             Server::Game(s) => s.software_type(),
             Server::Generic(s) => s.software_type(),
@@ -28,7 +28,7 @@ impl Server {
         }
     }
 
-    fn ip(&self) -> &str {
+    pub fn ip(&self) -> &str {
         match self {
             Server::Game(s) => s.ip(),
             Server::Generic(s) => s.ip(),
@@ -37,7 +37,7 @@ impl Server {
         }
     }
 
-    fn port(&self) -> u16 {
+    pub fn port(&self) -> u16 {
         match self {
             Server::Game(s) => s.port(),
             Server::Generic(s) => s.port(),
@@ -46,7 +46,7 @@ impl Server {
         }
     }
 
-    fn address(&self) -> &str {
+    pub fn address(&self) -> &str {
         match self {
             Server::Game(s) => s.address(),
             Server::Generic(s) => s.address(),
