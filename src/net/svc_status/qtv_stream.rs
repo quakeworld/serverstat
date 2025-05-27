@@ -1,4 +1,4 @@
-use crate::net::tokenize::tokenize;
+use quake_infostring::parse_fields;
 use quake_text::bytestr::to_unicode;
 
 /// note: partial QtvStream
@@ -17,7 +17,7 @@ impl TryFrom<&[u8]> for QtvStream {
     type Error = ParseError;
 
     fn try_from(response: &[u8]) -> Result<Self, Self::Error> {
-        let tokens = tokenize(to_unicode(response).as_str());
+        let tokens = parse_fields(to_unicode(response).as_str());
 
         // expected format:
         // "qtv 1 "Berlin QTV (1)" "1@berlin.qwsv.net:28000" 4"

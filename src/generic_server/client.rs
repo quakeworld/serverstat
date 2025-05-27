@@ -1,6 +1,6 @@
 //! Generic client connected to a server (client, player, spectator)
-use crate::net::tokenize::tokenize;
 use anyhow::{Result, anyhow as e};
+use quake_infostring::parse_fields;
 use quake_text::{bytestr, unicode};
 use std::cmp::Ordering;
 
@@ -32,7 +32,7 @@ impl TryFrom<&[u8]> for GenericClient {
     type Error = anyhow::Error;
 
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let tokens = tokenize(bytestr::to_unicode(bytes).as_str());
+        let tokens = parse_fields(bytestr::to_unicode(bytes).as_str());
 
         if tokens.len() < 8 {
             return Err(e!("Invalid token count"));

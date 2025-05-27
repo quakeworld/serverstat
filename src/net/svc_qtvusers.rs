@@ -1,4 +1,4 @@
-use super::tokenize::tokenize;
+use quake_infostring::parse_fields;
 use quake_text::bytestr;
 
 pub(crate) const COMMAND: &[u8] = b"\xff\xff\xff\xffqtvusers";
@@ -45,7 +45,7 @@ impl TryFrom<&[u8]> for QtvusersResponse {
         };
 
         // parse body
-        let tokens = tokenize(&bytestr::to_unicode(body));
+        let tokens = parse_fields(&bytestr::to_unicode(body));
 
         let Some((first, rest)) = tokens.split_first() else {
             return Err(Error::InvalidBody("missing stream id".to_string()));
