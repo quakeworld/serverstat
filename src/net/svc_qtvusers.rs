@@ -33,13 +33,13 @@ impl TryFrom<&[u8]> for QtvusersResponse {
     fn try_from(response: &[u8]) -> Result<Self, Self::Error> {
         // validate header
         if !response.starts_with(RESPONSE_HEADER) {
-            return Err(Error::InvalidHeader);
+            return Err(Error::Parse("invalid header".to_string()));
         }
 
         // extract body
         let body = {
             let Some(end_pos) = response.iter().position(|&b| b == b'\n') else {
-                return Err(Error::InvalidBody("missing newline".to_string()));
+                return Err(Error::Parse("missing trailing newline".to_string()));
             };
             &response[RESPONSE_HEADER.len()..end_pos]
         };
@@ -48,13 +48,13 @@ impl TryFrom<&[u8]> for QtvusersResponse {
         let tokens = parse_fields(&bytestr::to_unicode(body));
 
         let Some((first, rest)) = tokens.split_first() else {
-            return Err(Error::InvalidBody("missing stream id".to_string()));
+            return Err(Error::Parse("missing stream id".to_string()));
         };
 
         Ok(QtvusersResponse {
             stream_id: first
                 .parse::<u32>()
-                .map_err(|_| Error::InvalidBody("invalid stream id: not a number".to_string()))?,
+                .map_err(|_| Error::Parse("invalid stream id: not a number".to_string()))?,
             client_names: rest.iter().map(|s| s.to_string()).collect(),
         })
     }
@@ -62,11 +62,8 @@ impl TryFrom<&[u8]> for QtvusersResponse {
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq, Clone)]
 pub enum Error {
-    #[error("invalid response header")]
-    InvalidHeader,
-
-    #[error("invalid response body: {0}")]
-    InvalidBody(String),
+    #[error("qtvusers parse error: {0}")]
+    Parse(String),
 }
 
 #[cfg(test)]
@@ -76,44 +73,20 @@ mod tests {
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
-    // #[tokio::test]
-    // async fn test_qtvusers() -> Result<()> {
-    //     // invalid address
-    //     assert_eq!(
-    //         query_qtvusers_async("INVALID_ADDRESS", Duration::from_secs(1))
-    //             .await
-    //             .unwrap_err()
-    //             .to_string(),
-    //         "failed to send message: invalid socket address".to_string()
-    //     );
-
-    //     // timeout
-    //     assert_eq!(
-    //         query_qtvusers_async("quake.se:28000", Duration::default())
-    //             .await
-    //             .unwrap_err()
-    //             .to_string(),
-    //         "timeout reached while waiting for response".to_string()
-    //     );
-    //     Ok(())
-    // }
-
     #[test]
-    fn test_parse_qtvusers_response() -> Result<()> {
-        // invalid header
-        assert_eq!(
-            QtvusersResponse::try_from(b"foo".as_slice()).unwrap_err(),
-            Error::InvalidHeader
-        );
-
+    fn test_qtvusersresponse_try_from_bytes() -> Result<()> {
         // invalid body
         assert_eq!(
-            QtvusersResponse::try_from(b"\xff\xff\xff\xffnqtvusers ".as_slice()).unwrap_err(),
-            Error::InvalidBody("missing newline".to_string())
+            QtvusersResponse::try_from(b"foo".as_slice()).unwrap_err(),
+            Error::Parse("invalid header".to_string())
+        );
+        assert_eq!(
+            QtvusersResponse::try_from(b"\xff\xff\xff\xffnqtvusers 1".as_slice()).unwrap_err(),
+            Error::Parse("missing trailing newline".to_string())
         );
         assert_eq!(
             QtvusersResponse::try_from(b"\xff\xff\xff\xffnqtvusers foo\n".as_slice()).unwrap_err(),
-            Error::InvalidBody("invalid stream id: not a number".to_string())
+            Error::Parse("invalid stream id: not a number".to_string())
         );
 
         // no users
