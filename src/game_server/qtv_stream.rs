@@ -43,3 +43,28 @@ impl QtvStream {
         Some(format!("{}@{}", self.number()?, self.address()?))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_qtvstream() {
+        let stream = QtvStream {
+            id: 2,
+            name: "QUAKE.SE KTX Qtv (1)".to_string(),
+            number: Some(1),
+            address: Some("quake.se:28000".to_string()),
+            client_names: vec![],
+            client_count: 0,
+        };
+        assert_eq!(stream.id(), 2);
+        assert_eq!(stream.name(), "QUAKE.SE KTX Qtv (1)");
+        assert_eq!(stream.number(), Some(1));
+        assert_eq!(stream.address(), Some(&"quake.se:28000".to_string()));
+        assert_eq!(stream.client_count(), 0);
+        assert_eq!(stream.client_names().count(), 0);
+        assert_eq!(stream.url(), Some("1@quake.se:28000".to_string()));
+    }
+}
