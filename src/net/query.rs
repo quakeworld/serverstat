@@ -104,7 +104,10 @@ fn query_status(address: &str, timeout: Duration) -> Result<StatusResponse, Quer
 }
 
 #[cfg(feature = "tokio")]
-async fn query_status_async(address: &str, timeout: Duration) -> Result<StatusResponse, QueryError> {
+async fn query_status_async(
+    address: &str,
+    timeout: Duration,
+) -> Result<StatusResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_status::BUFFER_SIZE);
     let response = tinyudp::send_and_receive_async(address, svc_status::COMMAND, options).await?;
     Ok(StatusResponse::try_from(response.as_slice())?)
@@ -118,7 +121,10 @@ fn query_qtvusers(address: &str, timeout: Duration) -> Result<QtvusersResponse, 
 }
 
 #[cfg(feature = "tokio")]
-async fn query_qtvusers_async(address: &str, timeout: Duration) -> Result<QtvusersResponse, QueryError> {
+async fn query_qtvusers_async(
+    address: &str,
+    timeout: Duration,
+) -> Result<QtvusersResponse, QueryError> {
     let options = tinyudp::ReadOptions::new(timeout, svc_qtvusers::BUFFER_SIZE);
     let response = tinyudp::send_and_receive_async(address, svc_qtvusers::COMMAND, options).await?;
     Ok(QtvusersResponse::try_from(response.as_slice())?)
@@ -143,6 +149,7 @@ pub enum QueryError {
 }
 
 #[cfg(test)]
+#[cfg(feature = "tokio")]
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;

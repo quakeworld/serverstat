@@ -5,12 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'src/**.rs'
-      - 'Cargo.*'
+      - "src/**.rs"
+      - "Cargo.*"
   pull_request:
     paths:
-      - 'src/**.rs'
-      - 'Cargo.*'
+      - "src/**.rs"
+      - "Cargo.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,10 +23,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
       - uses: Swatinem/rust-cache@v2
 
-      - name: Build
+      - name: Build all features
         run: cargo build --all-features
 
-      - name: Test
+      - name: Build each feature
+        run: cargo hack build --each-feature
+
+      - name: Test all features
         run: cargo test --all-features
+
+      - name: Test each feature
+        run: cargo hack test --each-feature

@@ -28,8 +28,8 @@ pub mod tests {
     use anyhow::Result;
     use pretty_assertions::assert_eq;
 
-    #[tokio::test]
-    async fn test_host_as_ipv4() -> Result<()> {
+    #[test]
+    fn test_host_as_ipv4() -> Result<()> {
         // invalid
         assert_eq!(
             host_as_ipv4("INVALID_ADDRESS").unwrap_err(),
