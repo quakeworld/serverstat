@@ -100,5 +100,6 @@ mod tests {
         assert_eq!(server.ip(), generic.ip());
         assert_eq!(server.port(), generic.port());
         assert_eq!(server.clients().count(), generic.clients().count());
+        assert_eq!(server.client_slots(), ClientSlots::new(2, 128));
     }
 }
