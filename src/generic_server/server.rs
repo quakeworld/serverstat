@@ -57,7 +57,12 @@ impl GenericServer {
     pub fn qtv_stream(&self) -> Option<&QtvStream> {
         self.qtv_stream.as_ref()
     }
+
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.clients.is_empty()
     }
 }

@@ -53,6 +53,10 @@ impl ProxyServer {
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.clients.is_empty()
+    }
 }
 
 impl From<&GenericServer> for ProxyServer {
@@ -109,5 +113,6 @@ mod tests {
         assert_eq!(server.clients().count(), generic.clients().count());
         assert_eq!(server.client_slots(), ClientSlots::new(2, 128));
         assert_eq!(server.geo(), generic.geo());
+        assert!(!server.is_empty());
     }
 }

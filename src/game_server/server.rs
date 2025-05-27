@@ -81,6 +81,10 @@ impl GameServer {
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.players.is_empty() && self.spectators.is_empty()
+    }
 }
 
 impl From<&GenericServer> for GameServer {
@@ -176,6 +180,7 @@ mod tests {
         assert_eq!(server.spectators().count(), 1);
         assert_eq!(server.qtv_stream(), None);
         assert_eq!(server.geo(), generic.geo());
+        assert!(!server.is_empty());
 
         // no teamplay
         let generic = GenericServer {

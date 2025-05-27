@@ -45,6 +45,10 @@ impl QtvServer {
         let used = self.clients.len() as u32;
         ClientSlots::new(used, total)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.clients.is_empty()
+    }
 }
 
 impl From<&GenericServer> for QtvServer {
@@ -98,5 +102,6 @@ mod tests {
         assert_eq!(server.port(), generic.port());
         assert_eq!(server.clients().count(), generic.clients().count());
         assert_eq!(server.client_slots(), ClientSlots::new(2, 128));
+        assert!(!server.is_empty());
     }
 }
