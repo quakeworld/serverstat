@@ -85,6 +85,25 @@ mod tests {
 
     #[test]
     fn test_try_from_bytes() -> Result<()> {
+        // invalid token count
+        assert_eq!(
+            QtvStream::try_from(br#"qtv 2 "QUAKE.SE KTX Qtv (1)""#.as_slice()),
+            Err(ParseError::InvalidTokenCount {
+                expected: 5,
+                actual: 3
+            })
+        );
+
+        // invalid id
+        assert_eq!(
+            QtvStream::try_from(br#"qtv INVALID_ID "QUAKE.SE KTX Qtv (1)" "" 2"#.as_slice()),
+            Err(ParseError::InvalidNumber {
+                field: "id",
+                index: 1,
+                value: "INVALID_ID".to_string()
+            })
+        );
+
         // empty url
         assert_eq!(
             QtvStream::try_from(br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "" 0"#.as_slice())?,
@@ -97,7 +116,31 @@ mod tests {
             }
         );
 
-        // valid url
+        // invalid url
+        assert_eq!(
+            QtvStream::try_from(br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "INVALID_ID@BAR" 0"#.as_slice())?,
+            QtvStream {
+                id: 2,
+                name: "QUAKE.SE KTX Qtv (1)".to_string(),
+                number: None,
+                address: None,
+                client_count: 0,
+            }
+        );
+
+        // invalid client count
+        assert_eq!(
+            QtvStream::try_from(
+                br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "1@quake.se:28000" INVALID_COUNT"#.as_slice()
+            ),
+            Err(ParseError::InvalidNumber {
+                field: "client_count",
+                index: 4,
+                value: "INVALID_COUNT".to_string()
+            })
+        );
+
+        // valid
         assert_eq!(
             QtvStream::try_from(
                 br#"qtv 2 "QUAKE.SE KTX Qtv (1)" "1@quake.se:28000" 0"#.as_slice()
