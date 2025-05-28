@@ -2,7 +2,6 @@
 //! Functionality for working with geographical data,
 //! including country, city, region, and coordinates. It is used to enrich
 //! server information with location-based details.
-use anyhow::Error;
 use phf::phf_map;
 use quake_serverinfo::Settings;
 use std::hash::{Hash, Hasher};
@@ -122,6 +121,12 @@ impl Coords {
     }
 }
 
+impl core::fmt::Display for Coords {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:.6},{:.6}", self.lat, self.lng)
+    }
+}
+
 impl Hash for Coords {
     fn hash<H: Hasher>(&self, state: &mut H) {
         state.write_u64(self.lat.to_bits());
@@ -132,17 +137,17 @@ impl Hash for Coords {
 impl Eq for Coords {}
 
 impl TryFrom<&str> for Coords {
-    type Error = Error;
+    type Error = anyhow::Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let parts = value.split_once(',');
 
         if let Some((lat_str, lng_str)) = parts {
             let lat = lat_str.trim().parse::<f64>()?;
-            let long = lng_str.trim().parse::<f64>()?;
-            Ok(Self { lat, lng: long })
+            let lng = lng_str.trim().parse::<f64>()?;
+            Ok(Self { lat, lng })
         } else {
-            Err(Error::msg("Invalid coordinate format"))
+            Err(anyhow::anyhow!("Invalid coordinate format"))
         }
     }
 }
@@ -453,6 +458,8 @@ pub mod tests {
         assert_eq!(coords.lat(), 40.7128);
         assert_eq!(coords.lng(), -74.0060);
         assert_eq!(Coords::new(40.7128, -74.0060), coords);
+
+        assert_eq!(coords.to_string().as_str(), "40.712800,-74.006000");
 
         Ok(())
     }
