@@ -7,7 +7,6 @@ pub use quake_serverinfo::Settings;
 pub struct GenericServer {
     pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
-    pub(crate) address: String,
     pub(crate) ip: String,
     pub(crate) port: u16,
     pub(crate) settings: Settings,
@@ -26,8 +25,8 @@ impl GenericServer {
         self.software_type.clone()
     }
 
-    pub fn address(&self) -> &str {
-        &self.address
+    pub fn address(&self) -> String {
+        format!("{}:{}", self.ip(), self.port())
     }
 
     pub fn ip(&self) -> &str {
@@ -42,16 +41,16 @@ impl GenericServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> impl Iterator<Item = &GenericClient> {
-        self.clients.iter()
+    pub fn clients(&self) -> &[GenericClient] {
+        &self.clients
     }
 
     pub fn players(&self) -> impl Iterator<Item = &GenericClient> {
-        self.clients().filter(|client| !client.is_spectator())
+        self.clients().iter().filter(|client| !client.is_spectator())
     }
 
     pub fn spectators(&self) -> impl Iterator<Item = &GenericClient> {
-        self.clients().filter(|client| client.is_spectator())
+        self.clients().iter().filter(|client| client.is_spectator())
     }
 
     pub fn qtv_stream(&self) -> Option<&QtvStream> {

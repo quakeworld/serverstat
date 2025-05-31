@@ -79,11 +79,10 @@ fn compose_server(
     let server = GenericServer {
         server_type: ServerType::from_version(&version),
         software_type: SoftwareType::from_version(&version),
-        address: format!("{}:{}", ip, hostport.port()),
         ip,
         port: hostport.port(),
         settings: status_res.settings().clone(),
-        clients: status_res.clients().cloned().collect(),
+        clients: status_res.clients().into(),
         qtv_stream,
         geo: GeoInfo::from(status_res.settings()),
     };

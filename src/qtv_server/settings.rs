@@ -4,9 +4,9 @@ use quake_serverinfo::Settings;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct QtvSettings {
-    hostname: String,
-    maxclients: u32,
-    version: String,
+    pub(super) hostname: String,
+    pub(super) maxclients: u32,
+    pub(super) version: String,
 }
 
 #[allow(dead_code)]

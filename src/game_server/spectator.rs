@@ -4,10 +4,10 @@ use crate::GenericClient;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Spectator {
-    id: u32,
-    name: String,
-    auth_cc: String,
-    is_bot: bool,
+    pub(super) id: u32,
+    pub(super) name: String,
+    pub(super) auth_cc: String,
+    pub(super) is_bot: bool,
 }
 
 impl From<&GenericClient> for Spectator {

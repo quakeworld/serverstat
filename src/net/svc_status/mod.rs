@@ -33,8 +33,8 @@ impl StatusResponse {
         &self.settings
     }
 
-    pub fn clients(&self) -> impl Iterator<Item = &GenericClient> {
-        self.clients.iter()
+    pub fn clients(&self) -> &[GenericClient] {
+        &self.clients
     }
 
     pub fn qtv_stream(&self) -> &Option<QtvStream> {

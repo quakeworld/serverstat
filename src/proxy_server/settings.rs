@@ -4,13 +4,13 @@ use quake_serverinfo::Settings;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProxySettings {
-    hostname: String,
-    maxclients: u32,
-    version: String,
-    city: Option<String>,
-    coords: Option<String>,
-    countrycode: Option<String>,
-    hostport: Option<String>,
+    pub(super) hostname: String,
+    pub(super) maxclients: u32,
+    pub(super) version: String,
+    pub(super) city: Option<String>,
+    pub(super) coords: Option<String>,
+    pub(super) countrycode: Option<String>,
+    pub(super) hostport: Option<String>,
 }
 
 #[allow(dead_code)]

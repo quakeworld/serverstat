@@ -2,12 +2,14 @@ use crate::{
     ClientSlots, GenericServer, GeoInfo, ProxyClient, ProxySettings, ServerType, SoftwareType,
 };
 
+#[cfg(feature = "serde")]
+use serde::ser::SerializeStruct;
+
 /// Represents a proxy server
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct ProxyServer {
     software_type: SoftwareType,
-    address: String,
     ip: String,
     port: u16,
     settings: ProxySettings,
@@ -24,8 +26,8 @@ impl ProxyServer {
         self.software_type.clone()
     }
 
-    pub fn address(&self) -> &str {
-        &self.address
+    pub fn address(&self) -> String {
+        format!("{}:{}", self.ip(), self.port())
     }
 
     pub fn ip(&self) -> &str {
@@ -40,8 +42,8 @@ impl ProxyServer {
         &self.settings
     }
 
-    pub fn clients(&self) -> impl Iterator<Item = &ProxyClient> {
-        self.clients.iter()
+    pub fn clients(&self) -> &[ProxyClient] {
+        &self.clients
     }
 
     pub fn client_slots(&self) -> ClientSlots {
@@ -63,13 +65,32 @@ impl From<&GenericServer> for ProxyServer {
     fn from(server: &GenericServer) -> Self {
         Self {
             software_type: server.software_type(),
-            address: server.address().to_string(),
             ip: server.ip().to_string(),
             port: server.port(),
             settings: ProxySettings::from(server.settings()),
-            clients: server.clients().map(ProxyClient::from).collect(),
+            clients: server.clients().iter().map(ProxyClient::from).collect(),
             geo: server.geo().clone(),
         }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for ProxyServer {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut state = serializer.serialize_struct("ProxyServer", 9)?;
+        state.serialize_field("server_type", &self.server_type())?;
+        state.serialize_field("software_type", &self.software_type())?;
+        state.serialize_field("address", &self.address())?;
+        state.serialize_field("ip", self.ip())?;
+        state.serialize_field("port", &self.port())?;
+        state.serialize_field("settings", self.settings())?;
+        state.serialize_field("client_slots", &self.client_slots())?;
+        state.serialize_field("clients", self.clients())?;
+        state.serialize_field("geo", self.geo())?;
+        state.end()
     }
 }
 
@@ -86,7 +107,6 @@ mod tests {
         let generic = GenericServer {
             server_type: ServerType::ProxyServer,
             software_type: SoftwareType::Qtv,
-            address: "10.10.10.10".to_string(),
             ip: "10.10.10.10".to_string(),
             port: 28501,
             settings: Settings {
@@ -104,15 +124,51 @@ mod tests {
                 coords: Some(Coords::new(40.7128, -74.0060)),
             },
         };
-        let server = ProxyServer::from(&generic);
-        assert_eq!(server.server_type(), ServerType::ProxyServer);
-        assert_eq!(server.software_type(), SoftwareType::Qtv);
-        assert_eq!(server.address(), generic.address());
-        assert_eq!(server.ip(), generic.ip());
-        assert_eq!(server.port(), generic.port());
-        assert_eq!(server.clients().count(), generic.clients().count());
-        assert_eq!(server.client_slots(), ClientSlots::new(2, 128));
-        assert_eq!(server.geo(), generic.geo());
-        assert!(!server.is_empty());
+        let proxy = ProxyServer::from(&generic);
+        assert_eq!(proxy.server_type(), ServerType::ProxyServer);
+        assert_eq!(proxy.software_type(), SoftwareType::Qtv);
+        assert_eq!(proxy.address(), generic.address());
+        assert_eq!(proxy.ip(), generic.ip());
+        assert_eq!(proxy.port(), generic.port());
+        assert_eq!(proxy.clients().len(), generic.clients().len());
+        assert_eq!(proxy.client_slots(), ClientSlots::new(2, 128));
+        assert_eq!(proxy.geo(), generic.geo());
+        assert!(!proxy.is_empty());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serialization() -> anyhow::Result<()> {
+        let proxy = ProxyServer {
+            software_type: SoftwareType::Qwfwd,
+            ip: "10.10.10.10".to_string(),
+            port: 28000,
+            settings: ProxySettings {
+                hostname: "LocalProxy".to_string(),
+                maxclients: 128,
+                version: "QWFWD 1.0".to_string(),
+                ..Default::default()
+            },
+            clients: vec![ProxyClient {
+                id: 1,
+                time: 64,
+                name: "XantoM".to_string(),
+            }],
+            geo: GeoInfo {
+                country_code: Some("US".to_string()),
+                country_name: Some("United States".to_string()),
+                city: Some("New York".to_string()),
+                region: Some("North America".to_string()),
+                coords: Some(Coords::new(40.7128, -74.0060)),
+            },
+        };
+
+        let proxy_json = r#"{"server_type":"proxy_server","software_type":"qwfwd","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalProxy","maxclients":128,"version":"QWFWD 1.0","city":null,"coords":null,"countrycode":null,"hostport":null},"client_slots":{"total":128,"used":1,"free":127},"clients":[{"id":1,"time":64,"name":"XantoM"}],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
+
+        // ensure round-trip serialization
+        assert_eq!(serde_json::to_string(&proxy)?, proxy_json);
+        assert_eq!(serde_json::from_str::<ProxyServer>(proxy_json)?, proxy);
+
+        Ok(())
     }
 }

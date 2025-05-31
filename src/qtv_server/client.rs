@@ -4,9 +4,9 @@ use crate::GenericClient;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct QtvClient {
-    id: u32,
-    time: u32,
-    name: String,
+    pub(super) id: u32,
+    pub(super) time: u32,
+    pub(super) name: String,
 }
 
 #[allow(dead_code)]
