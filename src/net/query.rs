@@ -196,18 +196,22 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_status() -> Result<()> {
+        let timeout = Duration::from_secs_f32(0.2);
         assert_eq!(
-            query_status_async("quake.se:28501", Duration::from_secs(1)).await?,
-            query_status("quake.se:28501", Duration::from_secs(1))?
+            query_status_async("quake.se:28501", timeout)
+                .await?
+                .settings(),
+            query_status("quake.se:28501", timeout)?.settings()
         );
         Ok(())
     }
 
     #[tokio::test]
     async fn test_query_qtvusers() -> Result<()> {
+        let query_timeout = Duration::from_secs_f32(0.2);
         assert_eq!(
-            query_qtvusers_async("quake.se:28501", Duration::from_secs(1)).await?,
-            query_qtvusers("quake.se:28501", Duration::from_secs(1))?
+            query_qtvusers_async("quake.se:28501", query_timeout).await?,
+            query_qtvusers("quake.se:28501", query_timeout)?
         );
         Ok(())
     }

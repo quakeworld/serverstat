@@ -1,7 +1,7 @@
 use super::team;
 use crate::{
-    ClientSlots, GenericClient, GenericServer, GeoInfo, Player, QtvStream, ServerType,
-    SoftwareType, Spectator, Team,
+    GenericClient, GenericServer, GeoInfo, Player, QtvStream, ServerType, SoftwareType, Spectator,
+    Team,
 };
 use quake_serverinfo::Settings;
 use quake_text::unicode;
@@ -65,22 +65,6 @@ impl GameServer {
         self.qtv_stream.as_ref()
     }
 
-    pub fn player_slots(&self) -> ClientSlots {
-        let used = self.players.len() as u32;
-        let total = self.settings.maxclients.map(|v| v as u32).unwrap_or(used);
-        ClientSlots::new(used, total)
-    }
-
-    pub fn spectator_slots(&self) -> ClientSlots {
-        let used = self.spectators.len() as u32;
-        let total = self
-            .settings
-            .maxspectators
-            .map(|v| v as u32)
-            .unwrap_or(used);
-        ClientSlots::new(used, total)
-    }
-
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
     }
@@ -136,8 +120,18 @@ impl serde::Serialize for GameServer {
         state.serialize_field("ip", self.ip())?;
         state.serialize_field("port", &self.port())?;
         state.serialize_field("settings", self.settings())?;
-        state.serialize_field("player_slots", &self.player_slots())?;
-        state.serialize_field("spectator_slots", &self.spectator_slots())?;
+
+        let client_count = self.players().len() + self.spectators().len();
+        state.serialize_field("client_count", &client_count)?;
+
+        let client_limit = self.settings().maxclients.unwrap_or_default()
+            + self
+                .settings()
+                .maxspectators
+                .unwrap_or_default()
+                .max(client_count as i32);
+        state.serialize_field("client_limit", &client_limit)?;
+
         state.serialize_field("teams", self.teams())?;
         state.serialize_field("players", self.players())?;
         state.serialize_field("spectators", self.spectators())?;
@@ -198,8 +192,6 @@ mod tests {
         assert_eq!(server.address(), generic.address());
         assert_eq!(server.ip(), generic.ip());
         assert_eq!(server.port(), generic.port());
-        assert_eq!(server.player_slots(), ClientSlots::new(2, 4));
-        assert_eq!(server.spectator_slots(), ClientSlots::new(1, 8));
         assert_eq!(server.teams().len(), 1);
         assert_eq!(server.players().len(), 2);
         assert_eq!(server.spectators().len(), 1);
@@ -236,7 +228,11 @@ mod tests {
             software_type: SoftwareType::Mvdsv,
             ip: "10.10.10.10".to_string(),
             port: 28000,
-            settings: Settings::default(),
+            settings: Settings {
+                maxclients: Some(8),
+                maxspectators: Some(4),
+                ..Settings::default()
+            },
             teams: vec![],
             players: vec![],
             spectators: vec![],
@@ -250,7 +246,7 @@ mod tests {
             },
         };
 
-        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":null,"maxfps":null,"maxspectators":null,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"player_slots":{"total":0,"used":0,"free":0},"spectator_slots":{"total":0,"used":0,"free":0},"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
+        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&server)?, server_json);

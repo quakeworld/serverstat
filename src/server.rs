@@ -54,15 +54,6 @@ impl Server {
             Server::Generic(s) => s.address(),
         }
     }
-
-    pub fn is_empty(&self) -> bool {
-        match self {
-            Server::Game(s) => s.is_empty(),
-            Server::Proxy(s) => s.is_empty(),
-            Server::Qtv(s) => s.is_empty(),
-            Server::Generic(s) => s.is_empty(),
-        }
-    }
 }
 
 #[cfg(feature = "serde")]

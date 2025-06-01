@@ -13,7 +13,6 @@ mod qtv_server;
 mod server;
 
 // public api
-pub use common::client_slots::ClientSlots;
 pub use common::geo::{Coords, GeoInfo};
 pub use common::server_type::ServerType;
 pub use common::software_type::SoftwareType;

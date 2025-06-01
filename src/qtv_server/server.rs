@@ -1,4 +1,4 @@
-use crate::{ClientSlots, GenericServer, QtvClient, QtvSettings, ServerType, SoftwareType};
+use crate::{GenericServer, QtvClient, QtvSettings, ServerType, SoftwareType};
 
 #[cfg(feature = "serde")]
 use serde::ser::SerializeStruct;
@@ -42,12 +42,6 @@ impl QtvServer {
         &self.clients
     }
 
-    pub fn client_slots(&self) -> ClientSlots {
-        let total = self.settings().maxclients();
-        let used = self.clients.len() as u32;
-        ClientSlots::new(used, total)
-    }
-
     pub fn is_empty(&self) -> bool {
         self.clients.is_empty()
     }
@@ -70,14 +64,15 @@ impl serde::Serialize for QtvServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("QtvServer", 8)?;
+        let mut state = serializer.serialize_struct("QtvServer", 9)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
         state.serialize_field("ip", self.ip())?;
         state.serialize_field("port", &self.port())?;
         state.serialize_field("settings", self.settings())?;
-        state.serialize_field("client_slots", &self.client_slots())?;
+        state.serialize_field("client_count", &self.clients().len())?;
+        state.serialize_field("client_limit", &self.settings().maxclients())?;
         state.serialize_field("clients", self.clients())?;
         state.end()
     }
@@ -120,7 +115,6 @@ mod tests {
         assert_eq!(qtv.ip(), generic.ip());
         assert_eq!(qtv.port(), generic.port());
         assert_eq!(qtv.clients().len(), generic.clients().len());
-        assert_eq!(qtv.client_slots(), ClientSlots::new(2, 128));
         assert!(!qtv.is_empty());
     }
 
@@ -142,7 +136,7 @@ mod tests {
             }],
         };
 
-        let qtv_json = r#"{"server_type":"qtv_server","software_type":"qtv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalQTV","maxclients":128,"version":"QTVGO 1.16-dev"},"client_slots":{"total":128,"used":1,"free":127},"clients":[{"id":1,"time":64,"name":"XantoM"}]}"#;
+        let qtv_json = r#"{"server_type":"qtv_server","software_type":"qtv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalQTV","maxclients":128,"version":"QTVGO 1.16-dev"},"client_count":1,"client_limit":128,"clients":[{"id":1,"time":64,"name":"XantoM"}]}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&qtv)?, qtv_json);

@@ -1,6 +1,4 @@
-use crate::{
-    ClientSlots, GenericServer, GeoInfo, ProxyClient, ProxySettings, ServerType, SoftwareType,
-};
+use crate::{GenericServer, GeoInfo, ProxyClient, ProxySettings, ServerType, SoftwareType};
 
 #[cfg(feature = "serde")]
 use serde::ser::SerializeStruct;
@@ -46,12 +44,6 @@ impl ProxyServer {
         &self.clients
     }
 
-    pub fn client_slots(&self) -> ClientSlots {
-        let total = self.settings().maxclients();
-        let used = self.clients.len() as u32;
-        ClientSlots::new(used, total)
-    }
-
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
     }
@@ -80,14 +72,15 @@ impl serde::Serialize for ProxyServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("ProxyServer", 9)?;
+        let mut state = serializer.serialize_struct("ProxyServer", 10)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
         state.serialize_field("ip", self.ip())?;
         state.serialize_field("port", &self.port())?;
         state.serialize_field("settings", self.settings())?;
-        state.serialize_field("client_slots", &self.client_slots())?;
+        state.serialize_field("client_count", &self.clients().len())?;
+        state.serialize_field("client_limit", &self.settings().maxclients())?;
         state.serialize_field("clients", self.clients())?;
         state.serialize_field("geo", self.geo())?;
         state.end()
@@ -131,7 +124,6 @@ mod tests {
         assert_eq!(proxy.ip(), generic.ip());
         assert_eq!(proxy.port(), generic.port());
         assert_eq!(proxy.clients().len(), generic.clients().len());
-        assert_eq!(proxy.client_slots(), ClientSlots::new(2, 128));
         assert_eq!(proxy.geo(), generic.geo());
         assert!(!proxy.is_empty());
     }
@@ -163,7 +155,7 @@ mod tests {
             },
         };
 
-        let proxy_json = r#"{"server_type":"proxy_server","software_type":"qwfwd","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalProxy","maxclients":128,"version":"QWFWD 1.0","city":null,"coords":null,"countrycode":null,"hostport":null},"client_slots":{"total":128,"used":1,"free":127},"clients":[{"id":1,"time":64,"name":"XantoM"}],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
+        let proxy_json = r#"{"server_type":"proxy_server","software_type":"qwfwd","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalProxy","maxclients":128,"version":"QWFWD 1.0","city":null,"coords":null,"countrycode":null,"hostport":null},"client_count":1,"client_limit":128,"clients":[{"id":1,"time":64,"name":"XantoM"}],"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&proxy)?, proxy_json);
