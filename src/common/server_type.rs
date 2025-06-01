@@ -23,10 +23,10 @@ impl Default for ServerType {
 impl Display for ServerType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ServerType::GameServer => write!(f, "GameServer"),
-            ServerType::ProxyServer => write!(f, "ProxyServer"),
-            ServerType::QtvServer => write!(f, "QtvServer"),
-            ServerType::Unknown => write!(f, "Unknown"),
+            ServerType::GameServer => write!(f, "game_server"),
+            ServerType::ProxyServer => write!(f, "proxy_server"),
+            ServerType::QtvServer => write!(f, "qtv_server"),
+            ServerType::Unknown => write!(f, "unknown"),
         }
     }
 }
@@ -58,10 +58,10 @@ mod tests {
 
     #[test]
     fn test_display() {
-        assert_eq!(ServerType::GameServer.to_string(), "GameServer");
-        assert_eq!(ServerType::ProxyServer.to_string(), "ProxyServer");
-        assert_eq!(ServerType::QtvServer.to_string(), "QtvServer");
-        assert_eq!(ServerType::Unknown.to_string(), "Unknown");
+        assert_eq!(ServerType::GameServer.to_string(), "game_server");
+        assert_eq!(ServerType::ProxyServer.to_string(), "proxy_server");
+        assert_eq!(ServerType::QtvServer.to_string(), "qtv_server");
+        assert_eq!(ServerType::Unknown.to_string(), "unknown");
     }
 
     #[test]
