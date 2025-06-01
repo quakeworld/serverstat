@@ -1,7 +1,7 @@
 use crate::{GameServer, GenericServer, ProxyServer, QtvServer, ServerType, SoftwareType};
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub enum Server {
     Game(GameServer),
     Proxy(ProxyServer),
@@ -61,6 +61,21 @@ impl Server {
             Server::Proxy(s) => s.is_empty(),
             Server::Qtv(s) => s.is_empty(),
             Server::Generic(s) => s.is_empty(),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Server {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Server::Game(s) => s.serialize(serializer),
+            Server::Proxy(s) => s.serialize(serializer),
+            Server::Qtv(s) => s.serialize(serializer),
+            Server::Generic(s) => s.serialize(serializer),
         }
     }
 }
