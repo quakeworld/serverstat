@@ -8,49 +8,142 @@ mod weight {
 }
 
 pub(crate) fn from_game_server(server: &GameServer) -> u32 {
-    let human_count = server.players().iter().filter(|p| !p.is_bot()).count() as f32;
+    calculate_score(Params::from_game_server(server))
+}
 
-    if 1. == human_count {
-        return weight::HUMAN_PLAYER as u32;
+/// returns a score based on activity
+/// the score is floored to the closest multiple of 10
+fn calculate_score(params: Params) -> u32 {
+    let player_count = params.player_count as f32;
+
+    if player_count < 2. {
+        return (player_count * weight::HUMAN_PLAYER) as u32;
     }
 
+    let player_limit = params.player_limit as f32;
+    let spectator_count = params.spectator_count as f32;
+
     let server_score = {
-        let fill_percentage = {
-            let expected_count = server.settings().maxclients.map_or(8., |max| max as f32);
-            (human_count / expected_count).min(1.0)
-        };
-        let score_factor = match server.settings().deathmatch.is_none_or(|dm| 4 == dm) {
-            true => weight::DMM4_FACTOR,
-            false => 1.0,
+        let fill_percentage = (player_count / player_limit).min(1.0);
+        let score_factor = match params.deathmatch {
+            Some(4) | None => weight::DMM4_FACTOR,
+            _ => 1.0,
         };
         fill_percentage * weight::FULL_SERVER * score_factor
     };
 
-    let player_score = human_count * weight::HUMAN_PLAYER;
+    let player_score = player_count * weight::HUMAN_PLAYER;
+    let spectator_score = spectator_count * weight::SPECTATOR;
+    let exact_sum = server_score + player_score + spectator_score;
 
-    let spectator_score = {
-        let spectator_count = {
-            let qtv_spectator_count = server.qtv_stream().map_or(0, |q| q.client_count());
-            server.spectators().len() as u32 + qtv_spectator_count
-        } as f32;
-
-        spectator_count * weight::SPECTATOR
-    };
-
-    let score_sum = server_score + player_score + spectator_score;
-    let floored_sum = (score_sum / 10.).floor() * 10.;
+    // closest multiple of 10
+    let floored_sum = (exact_sum / 10.).round() * 10.;
     floored_sum as u32
 }
 
-// todo: tests, coverage
-/*
- #[cfg(test)]
+#[derive(Debug, PartialEq, Default)]
+struct Params {
+    player_count: u32,
+    player_limit: u32,
+    deathmatch: Option<i32>,
+    spectator_count: u32,
+}
+
+impl Params {
+    pub fn from_game_server(server: &GameServer) -> Self {
+        let spectator_count = {
+            let qtv_spectator_count = server.qtv_stream().map_or(0, |q| q.client_count());
+            server.spectators().len() as u32 + qtv_spectator_count
+        };
+
+        Self {
+            player_count: server.players().iter().filter(|p| !p.is_bot()).count() as u32,
+            player_limit: server.settings().maxclients.unwrap_or(8) as u32,
+            deathmatch: server.settings().deathmatch,
+            spectator_count,
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn from_game_server() {
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 0,
+                ..Default::default()
+            }),
+            0
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 1,
+                ..Default::default()
+            }),
+            4
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 2,
+                player_limit: 4,
+                ..Default::default()
+            }),
+            10
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 2,
+                player_limit: 2,
+                ..Default::default()
+            }),
+            20
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 2,
+                player_limit: 2,
+                deathmatch: Some(3),
+                ..Default::default()
+            }),
+            30
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 4,
+                player_limit: 8,
+                deathmatch: Some(3),
+                ..Default::default()
+            }),
+            30
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 8,
+                player_limit: 8,
+                deathmatch: Some(3),
+                ..Default::default()
+            }),
+            50
+        );
+
+        assert_eq!(
+            calculate_score(Params {
+                player_count: 8,
+                player_limit: 8,
+                deathmatch: Some(3),
+                spectator_count: 2,
+            }),
+            60
+        );
     }
 }
-*/

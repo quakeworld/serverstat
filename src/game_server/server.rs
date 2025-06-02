@@ -69,8 +69,9 @@ impl GameServer {
         &self.geo
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.players.is_empty() && self.spectators.is_empty()
+    #[cfg(feature = "score")]
+    pub fn score(&self) -> u32 {
+        super::score::from_game_server(self)
     }
 }
 
@@ -113,7 +114,7 @@ impl serde::Serialize for GameServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("GameServer", 13)?;
+        let mut state = serializer.serialize_struct("GameServer", 14)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
@@ -137,6 +138,10 @@ impl serde::Serialize for GameServer {
         state.serialize_field("spectators", self.spectators())?;
         state.serialize_field("qtv_stream", &self.qtv_stream())?;
         state.serialize_field("geo", self.geo())?;
+
+        #[cfg(feature = "score")]
+        state.serialize_field("score", &self.score())?;
+
         state.end()
     }
 }
@@ -245,7 +250,7 @@ mod tests {
             },
         };
 
-        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}}}"#;
+        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&server)?, server_json);
