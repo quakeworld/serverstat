@@ -47,10 +47,6 @@ impl ProxyServer {
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.clients.is_empty()
-    }
 }
 
 impl From<&GenericServer> for ProxyServer {
@@ -125,7 +121,6 @@ mod tests {
         assert_eq!(proxy.port(), generic.port());
         assert_eq!(proxy.clients().len(), generic.clients().len());
         assert_eq!(proxy.geo(), generic.geo());
-        assert!(!proxy.is_empty());
     }
 
     #[cfg(feature = "serde")]

@@ -46,7 +46,9 @@ impl GenericServer {
     }
 
     pub fn players(&self) -> impl Iterator<Item = &GenericClient> {
-        self.clients().iter().filter(|client| !client.is_spectator())
+        self.clients()
+            .iter()
+            .filter(|client| !client.is_spectator())
     }
 
     pub fn spectators(&self) -> impl Iterator<Item = &GenericClient> {
@@ -59,9 +61,5 @@ impl GenericServer {
 
     pub fn geo(&self) -> &GeoInfo {
         &self.geo
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.clients.is_empty()
     }
 }

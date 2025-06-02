@@ -41,10 +41,6 @@ impl QtvServer {
     pub fn clients(&self) -> &[QtvClient] {
         &self.clients
     }
-
-    pub fn is_empty(&self) -> bool {
-        self.clients.is_empty()
-    }
 }
 
 impl From<&GenericServer> for QtvServer {
@@ -115,7 +111,6 @@ mod tests {
         assert_eq!(qtv.ip(), generic.ip());
         assert_eq!(qtv.port(), generic.port());
         assert_eq!(qtv.clients().len(), generic.clients().len());
-        assert!(!qtv.is_empty());
     }
 
     #[cfg(feature = "serde")]

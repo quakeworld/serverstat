@@ -197,7 +197,6 @@ mod tests {
         assert_eq!(server.spectators().len(), 1);
         assert_eq!(server.qtv_stream(), None);
         assert_eq!(server.geo(), generic.geo());
-        assert!(!server.is_empty());
 
         // no teamplay
         let generic = GenericServer {
