@@ -196,7 +196,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_status() -> Result<()> {
-        let timeout = Duration::from_secs_f32(0.2);
+        let timeout = Duration::from_secs(1);
         assert_eq!(
             query_status_async("quake.se:28501", timeout)
                 .await?
@@ -208,7 +208,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_qtvusers() -> Result<()> {
-        let query_timeout = Duration::from_secs_f32(0.2);
+        let query_timeout = Duration::from_secs(1);
         assert_eq!(
             query_qtvusers_async("quake.se:28501", query_timeout).await?,
             query_qtvusers("quake.se:28501", query_timeout)?
