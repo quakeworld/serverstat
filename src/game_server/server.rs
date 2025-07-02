@@ -1,10 +1,8 @@
 use super::team;
-use crate::{
-    GenericClient, GenericServer, GeoInfo, Player, QtvStream, ServerType, SoftwareType, Spectator,
-    Team,
-};
+use crate::{GenericServer, GeoInfo, Player, QtvStream, ServerType, SoftwareType, Spectator, Team};
 use quake_serverinfo::Settings;
 use quake_text::unicode;
+use std::cmp::Reverse;
 
 #[cfg(feature = "serde")]
 use serde::ser::SerializeStruct;
@@ -77,28 +75,39 @@ impl GameServer {
 
 impl From<&GenericServer> for GameServer {
     fn from(server: &GenericServer) -> Self {
-        let mut clients: Vec<GenericClient> = server.clients().into();
-        clients.sort();
-
-        let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
+        // players
         let mut players: Vec<Player> = server.players().map(Player::from).collect();
 
-        if is_teamplay {
-            players.sort_by(|a, b| unicode::ord(&a.team, &b.team));
-        }
-
-        let spectators: Vec<Spectator> = server.spectators().map(Spectator::from).collect();
-        let teams = if is_teamplay {
+        // teams
+        let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
+        let mut teams = if is_teamplay {
             team::teams_from_players(&players)
         } else {
             vec![]
         };
 
+        // player and team sorting
+        let settings = server.settings().to_owned();
+        let is_standby = settings.status.clone().is_some_and(|s| s == "Standby");
+        teams.sort();
+        players.sort();
+
+        if !is_standby {
+            teams.sort_by_key(|t| Reverse(t.frags()));
+            players.sort_by_key(|a| Reverse(a.frags()));
+        } else if is_teamplay {
+            players.sort_by(|a, b| unicode::ord(a.team(), b.team()));
+        }
+
+        // spectators
+        let mut spectators: Vec<Spectator> = server.spectators().map(Spectator::from).collect();
+        spectators.sort();
+
         Self {
             software_type: server.software_type(),
             ip: server.ip().to_string(),
             port: server.port(),
-            settings: server.settings().to_owned(),
+            settings,
             teams,
             players,
             spectators,
@@ -165,19 +174,41 @@ mod tests {
                 hostname: Some("LocalMvdsv".to_string()),
                 maxclients: Some(4),
                 maxspectators: Some(8),
+                status: Some("Standby".to_string()),
                 teamplay: Some(2),
                 ..Default::default()
             },
             clients: vec![
                 GenericClient {
+                    name: "abc".to_string(),
+                    team: "red".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
                 GenericClient {
+                    name: "vikpe".to_string(),
+                    team: "blue".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
                 GenericClient {
+                    name: "XantoM".to_string(),
+                    team: "blue".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "qhlan-cam".to_string(),
+                    is_spectator: true,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "[streambot]".to_string(),
+                    is_spectator: true,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "[ServeMe]".to_string(),
                     is_spectator: true,
                     ..Default::default()
                 },
@@ -197,24 +228,38 @@ mod tests {
         assert_eq!(server.address(), generic.address());
         assert_eq!(server.ip(), generic.ip());
         assert_eq!(server.port(), generic.port());
-        assert_eq!(server.teams().len(), 1);
-        assert_eq!(server.players().len(), 2);
-        assert_eq!(server.spectators().len(), 1);
+        assert_eq!(server.teams().len(), 2);
+        assert_eq!(server.teams()[0].name(), "blue".to_string()); // ordered by name
+        assert_eq!(server.players().len(), 3);
+        assert_eq!(server.players()[0].name(), "vikpe".to_string()); // ordered by team name, then player name
+        assert_eq!(server.spectators().len(), 3);
+        assert_eq!(server.spectators()[0].name(), "[ServeMe]".to_string()); // ordered by name
         assert_eq!(server.qtv_stream(), None);
         assert_eq!(server.geo(), generic.geo());
 
-        // no teamplay
+        // standby (no teamplay) - players ordered by name
         let generic = GenericServer {
             settings: Settings {
                 teamplay: Some(0),
+                status: Some("Standby".to_string()),
                 ..Default::default()
             },
             clients: vec![
                 GenericClient {
+                    name: "abc".to_string(),
+                    team: "red".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
                 GenericClient {
+                    name: "vikpe".to_string(),
+                    team: "blue".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "XantoM".to_string(),
+                    team: "blue".to_string(),
                     is_spectator: false,
                     ..Default::default()
                 },
@@ -223,6 +268,77 @@ mod tests {
         };
         let server = GameServer::from(&generic);
         assert_eq!(server.teams().len(), 0);
+        assert_eq!(server.players()[0].name(), "abc".to_string());
+
+        // standby (teamplay) - players ordered by team then name
+        let generic = GenericServer {
+            settings: Settings {
+                teamplay: Some(2),
+                status: Some("Standby".to_string()),
+                ..Default::default()
+            },
+            clients: vec![
+                GenericClient {
+                    name: "abc".to_string(),
+                    team: "red".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "vikpe".to_string(),
+                    team: "blue".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "XantoM".to_string(),
+                    team: "blue".to_string(),
+                    is_spectator: false,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+        let server = GameServer::from(&generic);
+        assert_eq!(server.players()[0].name(), "vikpe".to_string());
+        assert_eq!(server.players()[1].name(), "XantoM".to_string());
+        assert_eq!(server.players()[2].name(), "abc".to_string());
+
+        // game in progress - players and teams ordered by frags
+        let generic = GenericServer {
+            settings: Settings {
+                teamplay: Some(2),
+                status: Some("1 minute left".to_string()),
+                ..Default::default()
+            },
+            clients: vec![
+                GenericClient {
+                    name: "abc".to_string(),
+                    team: "blue".to_string(),
+                    frags: 0,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "XantoM".to_string(),
+                    team: "red".to_string(),
+                    frags: 8,
+                    ..Default::default()
+                },
+                GenericClient {
+                    name: "vikpe".to_string(),
+                    team: "red".to_string(),
+                    frags: 16,
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        };
+        let server = GameServer::from(&generic);
+        assert_eq!(server.players()[0].name(), "vikpe".to_string());
+        assert_eq!(server.players()[1].name(), "XantoM".to_string());
+        assert_eq!(server.players()[2].name(), "abc".to_string());
+        assert_eq!(server.teams()[0].name(), "red".to_string());
+        assert_eq!(server.teams()[1].name(), "blue".to_string());
     }
 
     #[cfg(feature = "serde")]

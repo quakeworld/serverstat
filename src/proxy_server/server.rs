@@ -105,7 +105,6 @@ mod tests {
             settings: Settings {
                 hostname: Some("LocalQtv".to_string()),
                 maxclients: Some(128),
-                status: Some("Standby".to_string()),
                 ..Default::default()
             },
             clients: vec![

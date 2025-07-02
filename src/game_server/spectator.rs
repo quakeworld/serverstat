@@ -1,7 +1,9 @@
 use crate::GenericClient;
+use quake_text::unicode;
+use std::cmp::Ordering;
 
 /// A client connected to a [`GameServer`](crate::GameServer) as spectator.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Spectator {
     pub(super) id: u32,
@@ -37,6 +39,18 @@ impl Spectator {
 
     pub fn is_bot(&self) -> bool {
         self.is_bot
+    }
+}
+
+impl PartialOrd for Spectator {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Spectator {
+    fn cmp(&self, other: &Self) -> Ordering {
+        unicode::ord(&self.name, &other.name)
     }
 }
 
