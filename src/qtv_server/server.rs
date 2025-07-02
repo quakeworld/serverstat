@@ -45,11 +45,14 @@ impl QtvServer {
 
 impl From<&GenericServer> for QtvServer {
     fn from(server: &GenericServer) -> Self {
+        let mut clients: Vec<QtvClient> = server.clients().iter().map(QtvClient::from).collect();
+        clients.sort();
+
         Self {
             ip: server.ip().to_string(),
             port: server.port(),
             settings: QtvSettings::from(server.settings()),
-            clients: server.clients().iter().map(QtvClient::from).collect(),
+            clients,
         }
     }
 }
@@ -94,7 +97,16 @@ mod tests {
                 maxclients: Some(128),
                 ..Default::default()
             },
-            clients: vec![GenericClient::default(), GenericClient::default()],
+            clients: vec![
+                GenericClient {
+                    name: "XantoM".to_string(),
+                    ..GenericClient::default()
+                },
+                GenericClient {
+                    name: "vikpe".to_string(),
+                    ..GenericClient::default()
+                },
+            ],
             qtv_stream: None,
             geo: GeoInfo {
                 country_code: Some("US".to_string()),
@@ -111,6 +123,7 @@ mod tests {
         assert_eq!(qtv.ip(), generic.ip());
         assert_eq!(qtv.port(), generic.port());
         assert_eq!(qtv.clients().len(), generic.clients().len());
+        assert_eq!(qtv.clients()[0].name(), "vikpe".to_string()); // ordered by name
     }
 
     #[cfg(feature = "serde")]

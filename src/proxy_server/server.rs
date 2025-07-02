@@ -51,12 +51,16 @@ impl ProxyServer {
 
 impl From<&GenericServer> for ProxyServer {
     fn from(server: &GenericServer) -> Self {
+        let mut clients: Vec<ProxyClient> =
+            server.clients().iter().map(ProxyClient::from).collect();
+        clients.sort();
+
         Self {
             software_type: server.software_type(),
             ip: server.ip().to_string(),
             port: server.port(),
             settings: ProxySettings::from(server.settings()),
-            clients: server.clients().iter().map(ProxyClient::from).collect(),
+            clients,
             geo: server.geo().clone(),
         }
     }
@@ -101,9 +105,19 @@ mod tests {
             settings: Settings {
                 hostname: Some("LocalQtv".to_string()),
                 maxclients: Some(128),
+                status: Some("Standby".to_string()),
                 ..Default::default()
             },
-            clients: vec![GenericClient::default(), GenericClient::default()],
+            clients: vec![
+                GenericClient {
+                    name: "XantoM".to_string(),
+                    ..GenericClient::default()
+                },
+                GenericClient {
+                    name: "vikpe".to_string(),
+                    ..GenericClient::default()
+                },
+            ],
             qtv_stream: None,
             geo: GeoInfo {
                 country_code: Some("US".to_string()),
@@ -120,6 +134,7 @@ mod tests {
         assert_eq!(proxy.ip(), generic.ip());
         assert_eq!(proxy.port(), generic.port());
         assert_eq!(proxy.clients().len(), generic.clients().len());
+        assert_eq!(proxy.clients()[0].name(), "vikpe".to_string()); // ordered by name
         assert_eq!(proxy.geo(), generic.geo());
     }
 

@@ -1,7 +1,11 @@
+use std::cmp::Ordering;
+
+use quake_text::unicode;
+
 use crate::GenericClient;
 
 /// A client connected to a [`ProxyServer`](crate::ProxyServer)
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ProxyClient {
     pub(super) id: u32,
@@ -31,6 +35,18 @@ impl ProxyClient {
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+}
+
+impl PartialOrd for ProxyClient {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ProxyClient {
+    fn cmp(&self, other: &Self) -> Ordering {
+        unicode::ord(&self.name, &other.name)
     }
 }
 
