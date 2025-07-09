@@ -52,7 +52,8 @@ struct Params {
 impl Params {
     pub fn from_game_server(server: &GameServer) -> Self {
         let spectator_count = {
-            let qtv_spectator_count = server.qtv_stream().map_or(0, |q| q.client_count());
+            let qtv_spectator_count =
+                server.qtv_stream().map_or(0, |q| q.client_names().len()) as u32;
             server.spectators().len() as u32 + qtv_spectator_count
         };
 

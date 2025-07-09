@@ -71,7 +71,6 @@ fn compose_server(
         id: s.id,
         name: s.name.to_string(),
         number: s.number,
-        client_count: s.client_count,
         address: s.address.clone(),
         client_names: qtv_client_names,
     });
