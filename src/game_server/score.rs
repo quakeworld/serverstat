@@ -51,17 +51,11 @@ struct Params {
 
 impl Params {
     pub fn from_game_server(server: &GameServer) -> Self {
-        let spectator_count = {
-            let qtv_spectator_count =
-                server.qtv_stream().map_or(0, |q| q.client_names().len()) as u32;
-            server.spectators().len() as u32 + qtv_spectator_count
-        };
-
         Self {
             player_count: server.players().iter().filter(|p| !p.is_bot()).count() as u32,
             player_limit: server.settings().maxclients.unwrap_or(8) as u32,
             deathmatch: server.settings().deathmatch,
-            spectator_count,
+            spectator_count: server.total_spectator_count(),
         }
     }
 }

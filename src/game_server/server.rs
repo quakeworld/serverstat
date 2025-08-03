@@ -59,6 +59,11 @@ impl GameServer {
         &self.spectators
     }
 
+    pub fn total_spectator_count(&self) -> u32 {
+        let qtv_spec_count = self.qtv_stream().map_or(0, |q| q.client_names().len());
+        (self.spectators().len() + qtv_spec_count) as u32
+    }
+
     pub fn qtv_stream(&self) -> Option<&QtvStream> {
         self.qtv_stream.as_ref()
     }
@@ -123,7 +128,7 @@ impl serde::Serialize for GameServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("GameServer", 14)?;
+        let mut state = serializer.serialize_struct("GameServer", 15)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
@@ -145,6 +150,7 @@ impl serde::Serialize for GameServer {
         state.serialize_field("teams", self.teams())?;
         state.serialize_field("players", self.players())?;
         state.serialize_field("spectators", self.spectators())?;
+        state.serialize_field("total_spectator_count", &self.total_spectator_count())?;
         state.serialize_field("qtv_stream", &self.qtv_stream())?;
         state.serialize_field("geo", self.geo())?;
 
@@ -213,7 +219,13 @@ mod tests {
                     ..Default::default()
                 },
             ],
-            qtv_stream: None,
+            qtv_stream: Some(QtvStream {
+                id: 1,
+                name: "Local QTV".to_string(),
+                number: Some(1),
+                address: Some("10.10.10.10:28000".to_string()),
+                client_names: vec!["hub".to_string()],
+            }),
             geo: GeoInfo {
                 country_code: Some("US".to_string()),
                 country_name: Some("United States".to_string()),
@@ -234,7 +246,8 @@ mod tests {
         assert_eq!(server.players()[0].name(), "vikpe".to_string()); // ordered by team name, then player name
         assert_eq!(server.spectators().len(), 3);
         assert_eq!(server.spectators()[0].name(), "[ServeMe]".to_string()); // ordered by name
-        assert_eq!(server.qtv_stream(), None);
+        assert_eq!(server.total_spectator_count(), 4);
+        assert_eq!(server.qtv_stream(), generic.qtv_stream());
         assert_eq!(server.geo(), generic.geo());
 
         // standby (no teamplay) - players ordered by name
@@ -366,7 +379,7 @@ mod tests {
             },
         };
 
-        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
+        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"total_spectator_count":0,"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&server)?, server_json);
