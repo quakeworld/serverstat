@@ -26,6 +26,7 @@ pub use generic_server::server::GenericServer;
 pub use game_server::player::Player;
 pub use game_server::qtv_stream::QtvStream;
 pub use game_server::server::GameServer;
+pub use game_server::settings::GameServerSettings;
 pub use game_server::spectator::Spectator;
 pub use game_server::team::Team;
 
