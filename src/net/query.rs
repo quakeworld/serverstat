@@ -184,7 +184,7 @@ mod tests {
                 assert_eq!(server.ip(), expected_ip);
 
                 let settings = server.settings().clone();
-                assert!(settings.hostname.unwrap().contains("de.quake.world:28501"));
+                assert!(settings.hostname().contains("de.quake.world:28501"));
             }
 
             assert_eq!(generic_server, serverinfo("de.quake.world:28501", timeout)?);

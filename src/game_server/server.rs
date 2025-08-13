@@ -1,6 +1,8 @@
 use super::team;
-use crate::{GenericServer, GeoInfo, Player, QtvStream, ServerType, SoftwareType, Spectator, Team};
-use quake_serverinfo::Settings;
+use crate::{
+    GameServerSettings, GenericServer, GeoInfo, Player, QtvStream, ServerType, SoftwareType,
+    Spectator, Team,
+};
 use quake_text::unicode;
 use std::cmp::Reverse;
 
@@ -14,7 +16,7 @@ pub struct GameServer {
     pub(crate) software_type: SoftwareType,
     pub(crate) ip: String,
     pub(crate) port: u16,
-    pub(crate) settings: Settings,
+    pub(crate) settings: GameServerSettings,
     pub(crate) teams: Vec<Team>,
     pub(crate) players: Vec<Player>,
     pub(crate) spectators: Vec<Spectator>,
@@ -43,7 +45,7 @@ impl GameServer {
         self.port
     }
 
-    pub fn settings(&self) -> &Settings {
+    pub fn settings(&self) -> &GameServerSettings {
         &self.settings
     }
 
@@ -80,19 +82,20 @@ impl GameServer {
 
 impl From<&GenericServer> for GameServer {
     fn from(server: &GenericServer) -> Self {
+        // settings
+        let settings = GameServerSettings::from(&server.settings);
+
         // players
         let mut players: Vec<Player> = server.players().map(Player::from).collect();
 
         // teams
-        let is_teamplay = server.settings().teamplay.is_some_and(|tp| tp > 0);
-        let mut teams = if is_teamplay {
+        let mut teams = if settings.teamplay() > 0 {
             team::teams_from_players(&players)
         } else {
             vec![]
         };
 
         // player and team sorting
-        let settings = server.settings().to_owned();
         let is_standby = settings.status.clone().is_some_and(|s| s == "Standby");
         teams.sort();
         players.sort();
@@ -100,7 +103,7 @@ impl From<&GenericServer> for GameServer {
         if !is_standby {
             teams.sort_by_key(|t| Reverse(t.frags()));
             players.sort_by_key(|a| Reverse(a.frags()));
-        } else if is_teamplay {
+        } else if settings.teamplay() > 0 {
             players.sort_by(|a, b| unicode::ord(a.team(), b.team()));
         }
 
@@ -135,18 +138,8 @@ impl serde::Serialize for GameServer {
         state.serialize_field("ip", self.ip())?;
         state.serialize_field("port", &self.port())?;
         state.serialize_field("settings", self.settings())?;
-
-        let client_count = self.players().len() + self.spectators().len();
-        state.serialize_field("client_count", &client_count)?;
-
-        let client_limit = self.settings().maxclients.unwrap_or_default()
-            + self
-                .settings()
-                .maxspectators
-                .unwrap_or_default()
-                .max(client_count as i32);
-        state.serialize_field("client_limit", &client_limit)?;
-
+        state.serialize_field("client_count", &self.players().len())?;
+        state.serialize_field("client_limit", &self.settings().maxclients)?;
         state.serialize_field("teams", self.teams())?;
         state.serialize_field("players", self.players())?;
         state.serialize_field("spectators", self.spectators())?;
@@ -361,10 +354,10 @@ mod tests {
             software_type: SoftwareType::Mvdsv,
             ip: "10.10.10.10".to_string(),
             port: 28000,
-            settings: Settings {
-                maxclients: Some(8),
-                maxspectators: Some(4),
-                ..Settings::default()
+            settings: GameServerSettings {
+                maxclients: 8,
+                maxspectators: 4,
+                ..GameServerSettings::default()
             },
             teams: vec![],
             players: vec![],
@@ -379,7 +372,7 @@ mod tests {
             },
         };
 
-        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":null,"epoch":null,"fpd":null,"fraglimit":null,"gamedir":null,"hostname":null,"hostport":null,"ktxmode":null,"ktxver":null,"map":null,"matchtag":null,"maxclients":8,"maxfps":null,"maxspectators":4,"mode":null,"needpass":null,"pm_ktjump":null,"progs":null,"qvm":null,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":null,"timelimit":null,"version":null,"z_ext":null},"client_count":0,"client_limit":12,"teams":[],"players":[],"spectators":[],"total_spectator_count":0,"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
+        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":0,"epoch":null,"fraglimit":0,"gamedir":"","hostname":"","hostport":null,"ktxver":null,"map":"","matchtag":null,"maxclients":8,"maxspectators":4,"mode":null,"needpass":0,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":0,"timelimit":0,"version":""},"client_count":0,"client_limit":8,"teams":[],"players":[],"spectators":[],"total_spectator_count":0,"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&server)?, server_json);

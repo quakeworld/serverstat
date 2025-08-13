@@ -26,7 +26,7 @@ fn calculate_score(params: Params) -> u32 {
     let server_score = {
         let fill_percentage = (player_count / player_limit).min(1.0);
         let score_factor = match params.deathmatch {
-            Some(4) | None => weight::DMM4_FACTOR,
+            4 | 0 => weight::DMM4_FACTOR,
             _ => 1.0,
         };
         fill_percentage * weight::FULL_SERVER * score_factor
@@ -45,7 +45,7 @@ fn calculate_score(params: Params) -> u32 {
 struct Params {
     player_count: u32,
     player_limit: u32,
-    deathmatch: Option<i32>,
+    deathmatch: u32,
     spectator_count: u32,
 }
 
@@ -53,7 +53,7 @@ impl Params {
     pub fn from_game_server(server: &GameServer) -> Self {
         Self {
             player_count: server.players().iter().filter(|p| !p.is_bot()).count() as u32,
-            player_limit: server.settings().maxclients.unwrap_or(8) as u32,
+            player_limit: server.settings().maxclients,
             deathmatch: server.settings().deathmatch,
             spectator_count: server.total_spectator_count(),
         }
@@ -105,7 +105,7 @@ mod tests {
             calculate_score(Params {
                 player_count: 2,
                 player_limit: 2,
-                deathmatch: Some(3),
+                deathmatch: 3,
                 ..Default::default()
             }),
             30
@@ -115,7 +115,7 @@ mod tests {
             calculate_score(Params {
                 player_count: 4,
                 player_limit: 8,
-                deathmatch: Some(3),
+                deathmatch: 3,
                 ..Default::default()
             }),
             30
@@ -125,7 +125,7 @@ mod tests {
             calculate_score(Params {
                 player_count: 8,
                 player_limit: 8,
-                deathmatch: Some(3),
+                deathmatch: 3,
                 ..Default::default()
             }),
             50
@@ -135,7 +135,7 @@ mod tests {
             calculate_score(Params {
                 player_count: 8,
                 player_limit: 8,
-                deathmatch: Some(3),
+                deathmatch: 3,
                 spectator_count: 2,
             }),
             60
