@@ -1,11 +1,19 @@
 use crate::{GameServer, GenericServer, GeoInfo, ProxyServer, QtvServer, ServerType, SoftwareType};
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[serde(tag = "server_type")]
 pub enum Server {
+    #[serde(rename = "game_server")]
     Game(GameServer),
+
+    #[serde(rename = "proxy_server")]
     Proxy(ProxyServer),
+
+    #[serde(rename = "qtv_server")]
     Qtv(QtvServer),
+
+    #[serde(rename = "generic_server")]
     Generic(GenericServer),
 }
 
@@ -61,21 +69,6 @@ impl Server {
             Server::Proxy(s) => s.geo(),
             Server::Qtv(s) => s.geo(),
             Server::Generic(s) => s.geo(),
-        }
-    }
-}
-
-#[cfg(feature = "serde")]
-impl serde::Serialize for Server {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match self {
-            Server::Game(s) => s.serialize(serializer),
-            Server::Proxy(s) => s.serialize(serializer),
-            Server::Qtv(s) => s.serialize(serializer),
-            Server::Generic(s) => s.serialize(serializer),
         }
     }
 }
