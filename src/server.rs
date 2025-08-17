@@ -1,4 +1,4 @@
-use crate::{GameServer, GenericServer, ProxyServer, QtvServer, ServerType, SoftwareType};
+use crate::{GameServer, GenericServer, GeoInfo, ProxyServer, QtvServer, ServerType, SoftwareType};
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
@@ -52,6 +52,15 @@ impl Server {
             Server::Proxy(s) => s.address(),
             Server::Qtv(s) => s.address(),
             Server::Generic(s) => s.address(),
+        }
+    }
+
+    pub fn geo(&self) -> Option<&GeoInfo> {
+        match self {
+            Server::Game(s) => Some(s.geo()),
+            Server::Proxy(s) => Some(s.geo()),
+            Server::Qtv(_) => None,
+            Server::Generic(s) => Some(s.geo()),
         }
     }
 }
