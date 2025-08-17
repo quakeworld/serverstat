@@ -15,7 +15,7 @@ mod server_type;
 mod software_type;
 
 // public api
-pub use geo::{Coords, GeoInfo};
+pub use geo::{Coords, GeoInfo, GeoInfoBuilder};
 pub use server::Server;
 pub use server_type::ServerType;
 pub use software_type::SoftwareType;

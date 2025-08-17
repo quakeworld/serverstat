@@ -42,7 +42,7 @@ impl GeoInfo {
 
 /// Builder for [`GeoInfo`]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
-pub(crate) struct GeoInfoBuilder {
+pub struct GeoInfoBuilder {
     country_code: Option<String>,
     country_name: Option<String>,
     city: Option<String>,
