@@ -1,16 +1,17 @@
-use crate::{GenericServer, QtvClient, QtvSettings, ServerType, SoftwareType};
+use crate::{GenericServer, GeoInfo, QtvClient, QtvSettings, ServerType, SoftwareType};
 
 #[cfg(feature = "serde")]
 use serde::ser::SerializeStruct;
 
 /// Represents a QTV server
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct QtvServer {
     ip: String,
     port: u16,
     settings: QtvSettings,
     clients: Vec<QtvClient>,
+    geo: GeoInfo,
 }
 
 impl QtvServer {
@@ -41,6 +42,10 @@ impl QtvServer {
     pub fn clients(&self) -> &[QtvClient] {
         &self.clients
     }
+
+    pub fn geo(&self) -> &GeoInfo {
+        &self.geo
+    }
 }
 
 impl From<&GenericServer> for QtvServer {
@@ -53,6 +58,7 @@ impl From<&GenericServer> for QtvServer {
             port: server.port(),
             settings: QtvSettings::from(server.settings()),
             clients,
+            geo: server.geo().clone(),
         }
     }
 }
@@ -63,7 +69,7 @@ impl serde::Serialize for QtvServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("QtvServer", 9)?;
+        let mut state = serializer.serialize_struct("QtvServer", 10)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
@@ -73,6 +79,7 @@ impl serde::Serialize for QtvServer {
         state.serialize_field("client_count", &self.clients().len())?;
         state.serialize_field("client_limit", &self.settings().maxclients())?;
         state.serialize_field("clients", self.clients())?;
+        state.serialize_field("geo", self.geo())?;
         state.end()
     }
 }
@@ -124,6 +131,7 @@ mod tests {
         assert_eq!(qtv.port(), generic.port());
         assert_eq!(qtv.clients().len(), generic.clients().len());
         assert_eq!(qtv.clients()[0].name(), "vikpe".to_string()); // ordered by name
+        assert_eq!(qtv.geo(), generic.geo());
     }
 
     #[cfg(feature = "serde")]
@@ -142,9 +150,10 @@ mod tests {
                 time: 64,
                 name: "XantoM".to_string(),
             }],
+            geo: GeoInfo::default(),
         };
 
-        let qtv_json = r#"{"server_type":"qtv_server","software_type":"qtv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalQTV","maxclients":128,"version":"QTVGO 1.16-dev"},"client_count":1,"client_limit":128,"clients":[{"id":1,"time":64,"name":"XantoM"}]}"#;
+        let qtv_json = r#"{"server_type":"qtv_server","software_type":"qtv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"hostname":"LocalQTV","maxclients":128,"version":"QTVGO 1.16-dev"},"client_count":1,"client_limit":128,"clients":[{"id":1,"time":64,"name":"XantoM"}],"geo":{"country_code":null,"country_name":null,"city":null,"region":null,"coords":null}}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&qtv)?, qtv_json);

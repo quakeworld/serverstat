@@ -55,12 +55,12 @@ impl Server {
         }
     }
 
-    pub fn geo(&self) -> Option<&GeoInfo> {
+    pub fn geo(&self) -> &GeoInfo {
         match self {
-            Server::Game(s) => Some(s.geo()),
-            Server::Proxy(s) => Some(s.geo()),
-            Server::Qtv(_) => None,
-            Server::Generic(s) => Some(s.geo()),
+            Server::Game(s) => s.geo(),
+            Server::Proxy(s) => s.geo(),
+            Server::Qtv(s) => s.geo(),
+            Server::Generic(s) => s.geo(),
         }
     }
 }
