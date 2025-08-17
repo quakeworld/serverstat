@@ -90,7 +90,7 @@ fn compose_server(
         ServerType::QtvServer => Server::Qtv(QtvServer::from(&server)),
         ServerType::GameServer => Server::Game(GameServer::from(&server)),
         ServerType::ProxyServer => Server::Proxy(ProxyServer::from(&server)),
-        ServerType::Unknown => Server::Generic(server),
+        ServerType::GenericServer => Server::Generic(server),
     }
 }
 

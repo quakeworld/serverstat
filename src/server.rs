@@ -23,7 +23,7 @@ impl Server {
             Server::Game(_) => ServerType::GameServer,
             Server::Proxy(_) => ServerType::ProxyServer,
             Server::Qtv(_) => ServerType::QtvServer,
-            Server::Generic(_) => ServerType::Unknown,
+            Server::Generic(_) => ServerType::GenericServer,
         }
     }
 

@@ -11,12 +11,12 @@ pub enum ServerType {
     GameServer,
     ProxyServer,
     QtvServer,
-    Unknown,
+    GenericServer,
 }
 
 impl Default for ServerType {
     fn default() -> Self {
-        Self::Unknown
+        Self::GenericServer
     }
 }
 
@@ -26,7 +26,7 @@ impl Display for ServerType {
             ServerType::GameServer => write!(f, "game_server"),
             ServerType::ProxyServer => write!(f, "proxy_server"),
             ServerType::QtvServer => write!(f, "qtv_server"),
-            ServerType::Unknown => write!(f, "unknown"),
+            ServerType::GenericServer => write!(f, "generic_server"),
         }
     }
 }
@@ -46,7 +46,7 @@ impl ServerType {
         } else if ["qwfwd"].contains(&prefix.as_str()) {
             ServerType::ProxyServer
         } else {
-            ServerType::Unknown
+            ServerType::GenericServer
         }
     }
 }
@@ -61,7 +61,7 @@ mod tests {
         assert_eq!(ServerType::GameServer.to_string(), "game_server");
         assert_eq!(ServerType::ProxyServer.to_string(), "proxy_server");
         assert_eq!(ServerType::QtvServer.to_string(), "qtv_server");
-        assert_eq!(ServerType::Unknown.to_string(), "unknown");
+        assert_eq!(ServerType::GenericServer.to_string(), "generic_server");
     }
 
     #[test]
@@ -85,6 +85,6 @@ mod tests {
             ServerType::from_version("qwfwd 1.0"),
             ServerType::ProxyServer
         );
-        assert_eq!(ServerType::from_version("unknown 1.0"), ServerType::Unknown);
+        assert_eq!(ServerType::from_version("unknown 1.0"), ServerType::GenericServer);
     }
 }
