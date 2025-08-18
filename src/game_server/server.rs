@@ -165,7 +165,6 @@ mod tests {
     #[test]
     fn test_from_genericserver() {
         let generic = GenericServer {
-            server_type: ServerType::GameServer,
             software_type: SoftwareType::Mvdsv,
             ip: "10.10.10.10".to_string(),
             port: 28501,

@@ -8,7 +8,6 @@ use serde::ser::SerializeStruct;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 pub struct GenericServer {
-    pub(crate) server_type: ServerType,
     pub(crate) software_type: SoftwareType,
     pub(crate) ip: String,
     pub(crate) port: u16,
@@ -21,7 +20,7 @@ pub struct GenericServer {
 #[allow(dead_code)]
 impl GenericServer {
     pub fn server_type(&self) -> ServerType {
-        self.server_type.clone()
+        ServerType::GenericServer
     }
 
     pub fn software_type(&self) -> SoftwareType {
@@ -93,7 +92,7 @@ impl serde::Serialize for GenericServer {
 #[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
-    use crate::{Coords, GenericClient, GeoInfo, ServerType, SoftwareType};
+    use crate::{Coords, GenericClient, GeoInfo, SoftwareType};
     use pretty_assertions::assert_eq;
     use quake_serverinfo::Settings;
 
@@ -101,7 +100,6 @@ mod tests {
     #[test]
     fn test_serialization() -> anyhow::Result<()> {
         let server = GenericServer {
-            server_type: ServerType::GenericServer,
             software_type: SoftwareType::Unknown,
             ip: "10.10.10.10".to_string(),
             port: 28501,

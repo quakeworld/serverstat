@@ -76,7 +76,6 @@ fn compose_server(
     });
 
     let server = GenericServer {
-        server_type: ServerType::from_version(&version),
         software_type: SoftwareType::from_version(&version),
         ip,
         port: hostport.port(),

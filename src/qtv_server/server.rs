@@ -95,7 +95,6 @@ mod tests {
     #[test]
     fn test_from_genericserver() {
         let generic = GenericServer {
-            server_type: ServerType::QtvServer,
             software_type: SoftwareType::Qtv,
             ip: "10.10.10.10".to_string(),
             port: 28501,
