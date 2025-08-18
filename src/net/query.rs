@@ -85,7 +85,7 @@ fn compose_server(
         geo: GeoInfo::from(status_res.settings()),
     };
 
-    match server.server_type() {
+    match ServerType::from_version(&version) {
         ServerType::QtvServer => Server::Qtv(QtvServer::from(&server)),
         ServerType::GameServer => Server::Game(GameServer::from(&server)),
         ServerType::ProxyServer => Server::Proxy(ProxyServer::from(&server)),
