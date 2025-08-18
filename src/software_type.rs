@@ -77,7 +77,7 @@ mod tests {
             SoftwareType::FortressOne
         );
         assert_eq!(SoftwareType::from_version("fte 1.0"), SoftwareType::Fte);
-        assert_eq!(SoftwareType::from_version("mvdsv 1.0"), SoftwareType::Mvdsv);
+        assert_eq!(SoftwareType::from_version("MVDSV 1.0"), SoftwareType::Mvdsv);
         assert_eq!(SoftwareType::from_version("qtvgo 1.0"), SoftwareType::Qtv);
         assert_eq!(SoftwareType::from_version("qtv 1.0"), SoftwareType::Qtv);
         assert_eq!(SoftwareType::from_version("qwfwd 1.0"), SoftwareType::Qwfwd);

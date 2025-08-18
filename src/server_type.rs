@@ -33,21 +33,29 @@ impl Display for ServerType {
 
 impl ServerType {
     pub fn from_version(version: &str) -> Self {
-        let prefix = version
+        let version_ = version.trim().to_lowercase();
+        let version_str = version_.as_str();
+        let prefix = version_str
             .split_once(' ')
             .map(|(v, _)| v)
-            .unwrap_or(version)
-            .to_lowercase();
+            .unwrap_or(version_str);
 
-        if ["fo", "fte", "mvdsv", "zquake"].contains(&prefix.as_str()) {
-            ServerType::GameServer
-        } else if ["qtvgo", "qtv"].contains(&prefix.as_str()) {
-            ServerType::QtvServer
-        } else if ["qwfwd"].contains(&prefix.as_str()) {
-            ServerType::ProxyServer
-        } else {
-            ServerType::GenericServer
+        if ["fo", "fte", "mvdsv", "zquake"].contains(&prefix) {
+            return ServerType::GameServer;
+        } else if ["qtvgo", "qtv"].contains(&prefix) {
+            return ServerType::QtvServer;
+        } else if ["qwfwd"].contains(&prefix) {
+            return ServerType::ProxyServer;
         }
+
+        // misc game servers
+        for name in ["kkqwsv", "cpqwsv"] {
+            if version_str.contains(name) {
+                return ServerType::GameServer;
+            }
+        }
+
+        ServerType::GenericServer
     }
 }
 
@@ -67,12 +75,16 @@ mod tests {
     #[test]
     fn test_from_version() {
         assert_eq!(
+            ServerType::from_version("2.41-CPQWSV win32"),
+            ServerType::GameServer,
+        );
+        assert_eq!(
             ServerType::from_version("fo     1.0"),
             ServerType::GameServer
         );
         assert_eq!(ServerType::from_version("fte 1.0"), ServerType::GameServer);
         assert_eq!(
-            ServerType::from_version("mvdsv 1.0"),
+            ServerType::from_version("MVDSV 1.0"),
             ServerType::GameServer
         );
         assert_eq!(
@@ -85,6 +97,9 @@ mod tests {
             ServerType::from_version("qwfwd 1.0"),
             ServerType::ProxyServer
         );
-        assert_eq!(ServerType::from_version("unknown 1.0"), ServerType::GenericServer);
+        assert_eq!(
+            ServerType::from_version("unknown 1.0"),
+            ServerType::GenericServer
+        );
     }
 }
