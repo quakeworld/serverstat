@@ -41,8 +41,13 @@ impl GameServer {
     pub fn ip(&self) -> &str {
         &self.ip
     }
+
     pub fn port(&self) -> u16 {
         self.port
+    }
+
+    pub fn mode(&self) -> String {
+        self.settings().mode().unwrap_or("ffa").to_string()
     }
 
     pub fn settings(&self) -> &GameServerSettings {
@@ -131,12 +136,13 @@ impl serde::Serialize for GameServer {
     where
         S: serde::Serializer,
     {
-        let mut state = serializer.serialize_struct("GameServer", 15)?;
+        let mut state = serializer.serialize_struct("GameServer", 16)?;
         state.serialize_field("server_type", &self.server_type())?;
         state.serialize_field("software_type", &self.software_type())?;
         state.serialize_field("address", &self.address())?;
         state.serialize_field("ip", self.ip())?;
         state.serialize_field("port", &self.port())?;
+        state.serialize_field("mode", &self.mode())?;
         state.serialize_field("settings", self.settings())?;
         state.serialize_field("client_count", &self.players().len())?;
         state.serialize_field("client_limit", &self.settings().maxclients)?;
@@ -174,6 +180,7 @@ mod tests {
                 maxspectators: Some(8),
                 status: Some("Standby".to_string()),
                 teamplay: Some(2),
+                mode: Some("2on2".to_string()),
                 ..Default::default()
             },
             clients: vec![
@@ -232,6 +239,7 @@ mod tests {
         assert_eq!(server.address(), generic.address());
         assert_eq!(server.ip(), generic.ip());
         assert_eq!(server.port(), generic.port());
+        assert_eq!(server.mode(), "2on2".to_string());
         assert_eq!(server.teams().len(), 2);
         assert_eq!(server.teams()[0].name(), "blue".to_string()); // ordered by name
         assert_eq!(server.players().len(), 3);
@@ -371,7 +379,7 @@ mod tests {
             },
         };
 
-        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":0,"epoch":null,"fraglimit":0,"gamedir":"","hostname":"","hostport":null,"ktxver":null,"map":"","matchtag":null,"maxclients":8,"maxspectators":4,"mode":null,"needpass":0,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":0,"timelimit":0,"version":""},"client_count":0,"client_limit":8,"teams":[],"players":[],"spectators":[],"total_spectator_count":0,"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
+        let server_json = r#"{"server_type":"game_server","software_type":"mvdsv","address":"10.10.10.10:28000","ip":"10.10.10.10","port":28000,"mode":"ffa","settings":{"admin":null,"broadcast":null,"city":null,"coords":null,"countrycode":null,"deathmatch":0,"epoch":null,"fraglimit":0,"gamedir":"","hostname":"","hostport":null,"ktxver":null,"map":"","matchtag":null,"maxclients":8,"maxspectators":4,"mode":null,"needpass":0,"serverdemo":null,"status":null,"sv_antilag":null,"teamplay":0,"timelimit":0,"version":""},"client_count":0,"client_limit":8,"teams":[],"players":[],"spectators":[],"total_spectator_count":0,"qtv_stream":null,"geo":{"country_code":"US","country_name":"United States","city":"New York","region":"North America","coords":{"lat":40.7128,"lng":-74.006}},"score":0}"#;
 
         // ensure round-trip serialization
         assert_eq!(serde_json::to_string(&server)?, server_json);
