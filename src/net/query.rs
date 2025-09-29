@@ -201,10 +201,10 @@ mod tests {
     async fn test_query_status() -> Result<()> {
         let timeout = Duration::from_secs(1);
         assert_eq!(
-            query_status_async("quake.se:28501", timeout)
+            query_status_async("troopers.fi:28001", timeout)
                 .await?
                 .settings(),
-            query_status("quake.se:28501", timeout)?.settings()
+            query_status("troopers.fi:28001", timeout)?.settings()
         );
         Ok(())
     }
@@ -213,8 +213,8 @@ mod tests {
     async fn test_query_qtvusers() -> Result<()> {
         let query_timeout = Duration::from_secs(1);
         assert_eq!(
-            query_qtvusers_async("quake.se:28501", query_timeout).await?,
-            query_qtvusers("quake.se:28501", query_timeout)?
+            query_qtvusers_async("troopers.fi:28001", query_timeout).await?,
+            query_qtvusers("troopers.fi:28001", query_timeout)?
         );
         Ok(())
     }
